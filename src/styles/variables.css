@@ -1,0 +1,76 @@
+:root {
+  --bg: #f5f6f8;
+  --sidebar-bg: #1e2229;
+  --sidebar-fg: #c9cdd4;
+  --sidebar-active: #2f8cff;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --text: #1f2329;
+  --text-sub: #6b7280;
+  --primary: #2f8cff;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  /* 按钮状态色（primary/danger），主题模式在下方覆写 */
+  --btn-primary-fg: #ffffff;
+  --btn-primary-hover-bg: #1f7ae0;
+  --btn-danger-bg: #fdeaea;
+  --btn-danger-text: #c92a2a;
+  --btn-danger-border: #f3c2c2;
+  --btn-danger-hover-bg: #fbdcdc;
+}
+
+/* ===== 主题模式（settings store 注入 --page-alpha / --card-alpha / --btn-alpha） =====
+   页面 = --page-alpha；卡片/目录 = 页面+15%；按钮 = 页面+25% */
+:root[data-theme='light'] {
+  --bg: rgba(245, 246, 248, var(--page-alpha, 1));
+  --sidebar-bg: rgba(255, 255, 255, var(--card-alpha, 1));
+  --sidebar-fg: #3a4048;
+  --sidebar-active: #2f8cff;
+  --card-bg: rgba(255, 255, 255, var(--card-alpha, 1));
+  --card-border: rgba(210, 214, 220, 0.9);
+  --text: #1f2329;
+  --text-sub: #5b6470;
+  --primary: #2f8cff;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  /* 悬浮高亮 */
+  --card-hover-bg: rgba(255, 255, 255, calc(var(--card-alpha, 1) + 0.08));
+  --menu-hover: rgba(0, 0, 0, 0.06);
+  --menu-active-bg: rgba(47, 140, 255, 0.14);
+  --brand-fg: #1f2329;
+  --icon-btn-bg: rgba(0, 0, 0, 0.06);
+  --icon-btn-hover: rgba(0, 0, 0, 0.12);
+  --btn-surface: rgba(255, 255, 255, var(--btn-alpha, 1));
+  --btn-primary-bg: rgba(47, 140, 255, var(--btn-alpha, 1));
+  --btn-primary-hover-bg: #1f7ae0;
+  --btn-danger-bg: rgba(253, 234, 234, var(--btn-alpha, 1));
+  --btn-danger-text: #c92a2a;
+  --btn-danger-border: rgba(243, 194, 194, var(--btn-alpha, 1));
+  --btn-danger-hover-bg: #fbdcdc;
+}
+
+:root[data-theme='dark'] {
+  --bg: rgba(20, 23, 29, var(--page-alpha, 1));
+  --sidebar-bg: rgba(30, 34, 41, var(--card-alpha, 1));
+  --sidebar-fg: #c9cdd4;
+  --sidebar-active: #4f9dff;
+  --card-bg: rgba(38, 42, 51, var(--card-alpha, 1));
+  --card-border: rgba(255, 255, 255, 0.1);
+  --text: #e6e9ee;
+  --text-sub: #9aa1ad;
+  --primary: #4f9dff;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  /* 悬浮高亮 */
+  --card-hover-bg: rgba(52, 58, 70, calc(var(--card-alpha, 1) + 0.08));
+  --menu-hover: rgba(255, 255, 255, 0.07);
+  --menu-active-bg: rgba(79, 157, 255, 0.2);
+  --brand-fg: #ffffff;
+  --icon-btn-bg: rgba(255, 255, 255, 0.08);
+  --icon-btn-hover: rgba(255, 255, 255, 0.16);
+  --btn-surface: rgba(58, 64, 76, var(--btn-alpha, 1));
+  --btn-primary-bg: rgba(79, 157, 255, var(--btn-alpha, 1));
+  --btn-primary-hover-bg: #3f8df0;
+  --btn-danger-bg: rgba(146, 43, 43, var(--btn-alpha, 1));
+  --btn-danger-text: #f3b0b0;
+  --btn-danger-border: rgba(220, 120, 120, var(--btn-alpha, 1));
+  --btn-danger-hover-bg: #8f2f2f;
+}

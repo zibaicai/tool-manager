@@ -1,0 +1,20 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html,
+body,
+#app {
+  height: 100%;
+}
+body {
+  font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: var(--text);
+  /* 视口永不滚动：只有侧栏目录与右侧内容区在超出时各自出滚动条 */
+  overflow: hidden;
+}
+button {
+  cursor: pointer;
+  font: inherit;
+}
