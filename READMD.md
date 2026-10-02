@@ -132,7 +132,7 @@ npx tauri build --no-bundle
 
 ```json
 {
-  "scanRoot": "D:\\Py Scripting tool\\cmd_tool",
+  "scanRoot": "D:\\ScriptingTool\\cmd_tool",
   "categories": [
     { "id": "web-scan", "name": "Web 扫描", "type": "scan", "dirs": ["JSFinder-master"] },
     { "id": "exe-other", "name": "其他", "type": "manual" }

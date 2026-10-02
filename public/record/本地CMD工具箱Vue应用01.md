@@ -1,6 +1,6 @@
 # 本地CMD工具箱Vue应用
 
-> **Workspace:** d:\Py Scripting tool\cmd_tool_web
+> **Workspace:** d:\ScriptingTool\cmd_tool_web
 
 ---
 
@@ -11,7 +11,7 @@
 1. 左侧为目录栏，作为工具分类目录
    1. 左侧菜单目录由配置文件中编辑写入
 2. 右侧内容区域为具体工具展示列表，
-   0. 目录为D:\Py Scripting tool\cmd_tool
+   0. 目录为D:\ScriptingTool\cmd_tool
    1.  展示列表有指定的文件目录扫描其一级子目录进行读取渲染和新增列表项（exe启动的一类的工具）
         1. 指定的文件目录扫描其一级子目录进行读取渲染的为非exe启动的工具即通过CMD进行使用
 	2. exe类工具在别的目录需要我手动输入工具的存放位置的绝对路径，
@@ -91,16 +91,16 @@ MSVC 构建工具和 Windows SDK 均未安装。Tauri 在 Windows 编译必须�
 
 ## 已完成内容
 
-**工程结构**（位于 [cmd_tool_web](file:///d:/Py%20Scripting%20tool/cmd_tool_web)）
+**工程结构**（位于 [cmd_tool_web](file:///d:/ScriptingTool/cmd_tool_web)）
 
-- 前端：Vue 3.5 + TypeScript + Vite 5 + Pinia，[package.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/package.json) 中已含 M4 要用的 `markdown-it`、`highlight.js`、`@tauri-apps/api`
-- 布局：[App.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/App.vue) 左右分栏 → 深色 [SideBar.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/layout/SideBar.vue)（菜单+刷新）+ [ContentArea.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/layout/ContentArea.vue)（标题+计数+状态）
-- 卡片：[ToolCard.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ToolCard.vue) 长方框含标题/类型标签/路径/三按钮（使用文档、命令窗口、打开目录，后两者 M4 接通）
-- Rust 后端：[scanner.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/scanner.rs) 扫描一级子目录、解析 README.md 首个 H1、检测 Ops.md/icon.png；[config.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/config.rs) 读 `config/menu.json`；数据模型见 [models.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/models.rs)
-- 配置：[config/menu.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/menu.json) 已写入两个分类，CMD 分类指向 `D:\Py Scripting tool\cmd_tool`；[exe-tools.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/exe-tools.json) 为空待 M5
+- 前端：Vue 3.5 + TypeScript + Vite 5 + Pinia，[package.json](file:///d:/ScriptingTool/cmd_tool_web/package.json) 中已含 M4 要用的 `markdown-it`、`highlight.js`、`@tauri-apps/api`
+- 布局：[App.vue](file:///d:/ScriptingTool/cmd_tool_web/src/App.vue) 左右分栏 → 深色 [SideBar.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/layout/SideBar.vue)（菜单+刷新）+ [ContentArea.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/layout/ContentArea.vue)（标题+计数+状态）
+- 卡片：[ToolCard.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ToolCard.vue) 长方框含标题/类型标签/路径/三按钮（使用文档、命令窗口、打开目录，后两者 M4 接通）
+- Rust 后端：[scanner.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/scanner.rs) 扫描一级子目录、解析 README.md 首个 H1、检测 Ops.md/icon.png；[config.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/config.rs) 读 `config/menu.json`；数据模型见 [models.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/models.rs)
+- 配置：[config/menu.json](file:///d:/ScriptingTool/cmd_tool_web/config/menu.json) 已写入两个分类，CMD 分类指向 `D:\ScriptingTool\cmd_tool`；[exe-tools.json](file:///d:/ScriptingTool/cmd_tool_web/config/exe-tools.json) 为空待 M5
 - 图标：用 Node 生成蓝底白 T 源图，`tauri icon` 已导出 ico/icns/各尺寸 PNG
 
-**验证结果**：`npm install` 成功；`npm run build`（vue-tsc 严格类型检查 + vite 打包）通过（修复了 [tools.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/stores/tools.ts) return 闭合的一处笔误）。
+**验证结果**：`npm install` 成功；`npm run build`（vue-tsc 严格类型检查 + vite 打包）通过（修复了 [tools.ts](file:///d:/ScriptingTool/cmd_tool_web/src/stores/tools.ts) return 闭合的一处笔误）。
 
 ## 当前还差一步：Rust 环境（系统未安装）
 
@@ -151,15 +151,15 @@ M4 已完成，前端类型检查 + 打包通过（highlight.js 改为按需注�
 ## 本次改动
 
 **文档弹窗**
-- 新增 [markdown.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/utils/markdown.ts)：markdown-it 渲染 + 代码高亮（仅注册 python/bash/json/yaml/powershell/ini/cmd/js/ts/xml/go/rust，精简体积），链接外部浏览器打开
-- 新增 [DocDialog.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/DocDialog.vue)：**高度 100vh、宽度 min(880px, 94vw) 自适应、正文区域滚动**；右上角 ✕ 关闭，支持 Esc / 点击遮罩关闭；含加载中/失败状态和一套精简排版样式
+- 新增 [markdown.ts](file:///d:/ScriptingTool/cmd_tool_web/src/utils/markdown.ts)：markdown-it 渲染 + 代码高亮（仅注册 python/bash/json/yaml/powershell/ini/cmd/js/ts/xml/go/rust，精简体积），链接外部浏览器打开
+- 新增 [DocDialog.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/DocDialog.vue)：**高度 100vh、宽度 min(880px, 94vw) 自适应、正文区域滚动**；右上角 ✕ 关闭，支持 Esc / 点击遮罩关闭；含加载中/失败状态和一套精简排版样式
 
-**三个按钮全部接通真实功能**（[ToolCard.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ToolCard.vue)）
+**三个按钮全部接通真实功能**（[ToolCard.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ToolCard.vue)）
 - 使用文档：读取该工具根目录 Ops.md 弹窗渲染；无 Ops.md 时按钮置灰
 - 命令窗口 / 启动工具：按类型自动切换文案
 - 打开目录：exe 工具自动打开其所在目录
 
-**Rust 启动器** [launcher.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/launcher.rs)（已在 [lib.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/lib.rs) 注册）
+**Rust 启动器** [launcher.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/launcher.rs)（已在 [lib.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/lib.rs) 注册）
 - `cmd` 类：`cmd.exe /K` + `CREATE_NEW_CONSOLE`，在工具根目录弹出新命令行窗口
 - `exe` 类：经 `cmd /C start`（ShellExecute 语义）启动，工作目录为 exe 所在目录——GUI 程序不附带黑框，控制台程序自动开窗口
 - 打开目录：用 `tauri-plugin-opener` 的 `open_path`（已对照官方 2.x 文档确认 API 签名）
@@ -181,7 +181,7 @@ winget install Rustlang.Rustup
 
 **User**
 
-PS D:\Py Scripting tool\cmd_tool_web> winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"   
+PS D:\ScriptingTool\cmd_tool_web> winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"   
 搜索源时失败: msstore
 执行此命令时发生意外错误：
 WinHttpSendRequest: 12002: æä½è¶æ¶
@@ -238,7 +238,7 @@ npm run tauri dev
 
 **User**
 
-PS D:\Py Scripting tool\cmd_tool_web> npm run tauri dev
+PS D:\ScriptingTool\cmd_tool_web> npm run tauri dev
 
 > tool-manager@0.1.0 tauri
 > tauri dev
@@ -282,7 +282,7 @@ npm run tauri dev
 
 **User**
 
-D:\Py Scripting tool\cmd_tool_web>corgo --version
+D:\ScriptingTool\cmd_tool_web>corgo --version
 'corgo' 不是内部或外部命令，也不是可运行的程序
 或批处理文件。
 
@@ -316,10 +316,10 @@ npm run tauri dev
 窗口打开后按这个清单验收：
 
 1. 左侧深色栏显示 **CMD 工具 / EXE 工具** 两个分类，默认选中 CMD 工具
-2. 右侧出现 `D:\Py Scripting tool\cmd_tool` 下 5 个工具卡片（JSFinder、OneForAll、Packer-Fuzzer、URLFinder、nuclei），标题取自各自 README.md 的 H1
+2. 右侧出现 `D:\ScriptingTool\cmd_tool` 下 5 个工具卡片（JSFinder、OneForAll、Packer-Fuzzer、URLFinder、nuclei），标题取自各自 README.md 的 H1
 3. 点「打开目录」→ 弹出对应工具的资源管理器窗口
 4. 点「命令窗口」→ 在该工具根目录弹出新的 cmd 黑窗（`cmd /K`，不会自动关闭）
-5. 「使用文档」目前全部置灰（这些目录没有 Ops.md）——可以新建一个 `D:\Py Scripting tool\cmd_tool\URLFinder\Ops.md` 随便写点 Markdown，点左下角刷新后即可验证弹窗（弹窗高为整屏、右上角 ✕ 或 Esc 关闭）
+5. 「使用文档」目前全部置灰（这些目录没有 Ops.md）——可以新建一个 `D:\ScriptingTool\cmd_tool\URLFinder\Ops.md` 随便写点 Markdown，点左下角刷新后即可验证弹窗（弹窗高为整屏、右上角 ✕ 或 Esc 关闭）
 6. EXE 工具分类当前为空，手动录入是下一步 M5
 
 有任何启动报错或界面异常，把终端输出截图/贴给我即可。
@@ -328,7 +328,7 @@ npm run tauri dev
 
 **User**
 
-D:\Py Scripting tool\cmd_tool_web>cargo --version
+D:\ScriptingTool\cmd_tool_web>cargo --version
 'cargo' 不是内部或外部命令，也不是可运行的程序
 或批处理文件。
 
@@ -372,7 +372,7 @@ PowerShell 的错误流包装干扰了解析，我把清洗后的日志写到一
 1. 左侧切换 **CMD 工具 / EXE 工具** 分类
 2. 任意卡片点 **打开目录** → 资源管理器定位到该工具目录
 3. **命令窗口** → 已验证 OK，在工具根目录弹出 `cmd /K` 窗口
-4. **使用文档** 目前置灰（无 Ops.md）。可新建 `D:\Py Scripting tool\cmd_tool\URLFinder\Ops.md`，写几行 Markdown（标题、代码块都行），点左下「刷新」后该按钮即可点击——弹窗为整屏高度、正文滚动、右上 ✕/Esc 关闭
+4. **使用文档** 目前置灰（无 Ops.md）。可新建 `D:\ScriptingTool\cmd_tool\URLFinder\Ops.md`，写几行 Markdown（标题、代码块都行），点左下「刷新」后该按钮即可点击——弹窗为整屏高度、正文滚动、右上 ✕/Esc 关闭
 5. EXE 工具分类暂为空，即下一步 M5 的手动录入
 
 说明一下刚才的小插曲：第一次从我这边启动时编译 351 个包全部成功，但应用在我的**沙箱环境**里无权写 `%LOCALAPPDATA%\com.toolmanager.app` 才报 `os error 5`；切换到沙箱外启动后立即正常。你自己的终端没有这个限制。
@@ -389,7 +389,7 @@ PowerShell 的错误流包装干扰了解析，我把清洗后的日志写到一
 
 这是个真实 bug，我来定位修复。
 
-**原因分析**：当前 [launcher.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/launcher.rs) 里 CMD 窗口是用 `CREATE_NEW_CONSOLE` 直接 spawn 的，子进程**继承了父进程的 stdin**。开发模式下父进程 stdin 是后台管道（立即 EOF），`cmd /K` 读到 EOF 就退出——所以新窗口一闪而过，提示符反而打印进了 dev 日志（就是之前看到的那两行路径）。
+**原因分析**：当前 [launcher.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/launcher.rs) 里 CMD 窗口是用 `CREATE_NEW_CONSOLE` 直接 spawn 的，子进程**继承了父进程的 stdin**。开发模式下父进程 stdin 是后台管道（立即 EOF），`cmd /K` 读到 EOF 就退出——所以新窗口一闪而过，提示符反而打印进了 dev 日志（就是之前看到的那两行路径）。
 
 **修复**：和 EXE 启动一样，改用 `cmd /C start "" /D <目录> cmd /K` 的方式——外层是隐形辅助进程，`start` 会为内层 cmd 创建一个**拥有独立控制台句柄**的新窗口，不再继承父进程 stdin，窗口会保持打开：
 
@@ -401,10 +401,10 @@ PowerShell 的错误流包装干扰了解析，我把清洗后的日志写到一
 
 请再点一次任意卡片的「**命令窗口**」验证：
 
-- 现在应弹出一个**持续存在**的黑色 CMD 窗口，标题类似 `cmd.exe`，提示符停在对应工具目录（如 `D:\Py Scripting tool\cmd_tool\URLFinder>`），可以直接输入命令，`/K` 保证手动关闭前不会退出
+- 现在应弹出一个**持续存在**的黑色 CMD 窗口，标题类似 `cmd.exe`，提示符停在对应工具目录（如 `D:\ScriptingTool\cmd_tool\URLFinder>`），可以直接输入命令，`/K` 保证手动关闭前不会退出
 - 窗口与主应用完全独立，关掉主应用也不影响已打开的 CMD
 
-修复要点：改为外层隐形 `cmd /C start "" /D <目录> cmd /K`（[launcher.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/launcher.rs#L37-L54)），让新窗口拥有独立控制台而不继承 dev 进程的管道 stdin。这个方式对开发模式和将来打包后的正式版都适用。
+修复要点：改为外层隐形 `cmd /C start "" /D <目录> cmd /K`（[launcher.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/launcher.rs#L37-L54)），让新窗口拥有独立控制台而不继承 dev 进程的管道 stdin。这个方式对开发模式和将来打包后的正式版都适用。
 
 顺手也确认下「打开目录」和 EXE 类启动是否正常（EXE 用的本来就是同一套 start 机制）。确认没问题后我继续 M5。
 
@@ -439,7 +439,7 @@ PowerShell 的错误流包装干扰了解析，我把清洗后的日志写到一
 
 类型检查通过，Vite 已热更新（如果弹窗正开着，先关掉重新打开一次「使用文档」加载新版本）。
 
-本次修复了三处根因（均在 [DocDialog.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/DocDialog.vue)）：
+本次修复了三处根因（均在 [DocDialog.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/DocDialog.vue)）：
 
 1. **弹窗随鼠标下移**：弹窗原本渲染在 ToolCard 内部，卡片 hover 时有 `transform: translateY(-2px)`，导致 fixed 弹窗的定位上下文变成卡片。现改为 `<Teleport to="body">`，弹窗直接挂到 body，与卡片完全解耦，鼠标怎么移动都不会再位移。
 2. **两侧下层内容焦点冲突 / 弹窗不在最顶**：遮罩原来没设 left/right/width，实际只覆盖面板宽的一条区域。现改为 `inset: 0` 铺满整个视口并加半透明黑色背景，所有鼠标事件被遮罩拦截，下层卡片和侧栏不再响应悬浮/点击；点击遮罩空白处仍可关闭。
@@ -510,11 +510,11 @@ cargo check 已通过（`Finished in 1.04s`，之前那条错误是文件保存�
 
 ## menu.json 新结构
 
-[menu.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/menu.json) 现在支持两个配置参数：
+[menu.json](file:///d:/ScriptingTool/cmd_tool_web/config/menu.json) 现在支持两个配置参数：
 
 ```json
 {
-  "scanRoot": "D:\\Py Scripting tool\\cmd_tool",
+  "scanRoot": "D:\\ScriptingTool\\cmd_tool",
   "categories": [
     {
       "id": "recon",
@@ -540,12 +540,12 @@ cargo check 已通过（`Finished in 1.04s`，之前那条错误是文件保存�
 - 兼容：`dirs` 留空或不写时，自动扫描根目录下全部一级子目录（旧行为）
 - 名单里写错目录名时该条会被静默跳过（不会报错中断）
 
-改完 menu.json 后，在应用里点左下「**刷新**」即可——我已把刷新按钮升级为**重新读取配置 + 重新扫描**（[tools.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/stores/tools.ts#L24-L41)），当前选中的分类若仍存在会保持选中，不用重启应用。
+改完 menu.json 后，在应用里点左下「**刷新**」即可——我已把刷新按钮升级为**重新读取配置 + 重新扫描**（[tools.ts](file:///d:/ScriptingTool/cmd_tool_web/src/stores/tools.ts#L24-L41)），当前选中的分类若仍存在会保持选中，不用重启应用。
 
 ## 本次改动文件
 
-- 后端：[models.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/models.rs)（新增 `scanRoot`/`dirs` 字段，均带默认值）、[scanner.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/scanner.rs#L74-L112)（抽出 `inspect_dir`，名单模式按名收集+保序，无名单时全量扫描）
-- 前端：[types/index.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/types/index.ts)、[fs.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/api/fs.ts)、[tools.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/stores/tools.ts)、[SideBar.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/layout/SideBar.vue)
+- 后端：[models.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/models.rs)（新增 `scanRoot`/`dirs` 字段，均带默认值）、[scanner.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/scanner.rs#L74-L112)（抽出 `inspect_dir`，名单模式按名收集+保序，无名单时全量扫描）
+- 前端：[types/index.ts](file:///d:/ScriptingTool/cmd_tool_web/src/types/index.ts)、[fs.ts](file:///d:/ScriptingTool/cmd_tool_web/src/api/fs.ts)、[tools.ts](file:///d:/ScriptingTool/cmd_tool_web/src/stores/tools.ts)、[SideBar.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/layout/SideBar.vue)
 
 现在到应用窗口点一下刷新，左侧应变为「信息收集 / Fuzz 测试 / EXE 工具」三项，前两个分别展示 4 个和 1 个工具卡片（JSFinder 有 Ops.md，文档按钮可点开验证之前的弹窗修复）。确认后我继续 M5（EXE 工具手动录入）。
 
@@ -631,22 +631,22 @@ M5 已完成，应用已全新重启（PID 36980），cargo check、CRUD 集成�
 
 **EXE 工具录入流程**：切到左侧「EXE 工具」分类 → 右上「**＋ 添加 EXE 工具**」→ 弹窗中可直接粘贴绝对路径，或点「**浏览...**」用系统文件框选择 .exe → 添加后卡片立即出现。
 
-**录入规则**（[exetools.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/exetools.rs)，已全部通过实测）：
+**录入规则**（[exetools.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/exetools.rs)，已全部通过实测）：
 - 必须是**绝对路径**、文件真实存在、扩展名为 .exe，否则返回明确错误
 - 同一路径**禁止重复录入**（Windows 路径大小写不敏感判断）
 - **标题全自动**：exe 同目录 README.md 的 H1 → 没有则用 exe 文件名。实测 `URLFinder.exe` 解析出标题「开发由来」
 - **使用文档**：exe 同目录放 `Ops.md` 后，点刷新即自动启用文档按钮；`icon.png` 同理
-- 持久化到 [exe-tools.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/exe-tools.json)（pretty JSON），重启不丢
+- 持久化到 [exe-tools.json](file:///d:/ScriptingTool/cmd_tool_web/config/exe-tools.json)（pretty JSON），重启不丢
 - 卡片右上角 ✕ 可**移除录入**（带确认，只删列表记录，不删 exe 文件本身）
 - exe 文件被移走时卡片仍显示，`available=false`，不会让列表崩掉
 
 **新增/改动文件**：
-- 后端：[exetools.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/exetools.rs)（load/add/remove 三命令）、[lib.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/lib.rs)、[Cargo.toml](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/Cargo.toml)、[default.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/capabilities/default.json)（dialog 权限）
-- 前端：[exe.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/api/exe.ts)、[ExeToolForm.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ExeToolForm.vue)、[ContentArea.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/layout/ContentArea.vue)、[ToolCard.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ToolCard.vue)、[tools.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/stores/tools.ts)
+- 后端：[exetools.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/exetools.rs)（load/add/remove 三命令）、[lib.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/lib.rs)、[Cargo.toml](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/Cargo.toml)、[default.json](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/capabilities/default.json)（dialog 权限）
+- 前端：[exe.ts](file:///d:/ScriptingTool/cmd_tool_web/src/api/exe.ts)、[ExeToolForm.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ExeToolForm.vue)、[ContentArea.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/layout/ContentArea.vue)、[ToolCard.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ToolCard.vue)、[tools.ts](file:///d:/ScriptingTool/cmd_tool_web/src/stores/tools.ts)
 
 ## 关于上一轮"页面一个工具都没了"
 
-后端扫描经单测验证始终正常返回 4 个工具（JSFinder、OneForAll、开发由来、nuclei），根因是我编辑 models.rs 时一度漏写逗号，dev 监视器捕获到中间态编译失败、应用未重启，而 Vite 只热更了前端。本次已**杀掉旧进程全新启动**，请到窗口确认：「信息收集」4 个卡片、「Fuzz 测试」1 个卡片已恢复；然后在「EXE 工具」里录一个 exe（可试 `D:\Py Scripting tool\cmd_tool\URLFinder\URLFinder.exe`）验证全流程。
+后端扫描经单测验证始终正常返回 4 个工具（JSFinder、OneForAll、开发由来、nuclei），根因是我编辑 models.rs 时一度漏写逗号，dev 监视器捕获到中间态编译失败、应用未重启，而 Vite 只热更了前端。本次已**杀掉旧进程全新启动**，请到窗口确认：「信息收集」4 个卡片、「Fuzz 测试」1 个卡片已恢复；然后在「EXE 工具」里录一个 exe（可试 `D:\ScriptingTool\cmd_tool\URLFinder\URLFinder.exe`）验证全流程。
 
 下一步是骨架中的 M6（搜索、收藏、最近使用），需要时告诉我。
 
@@ -679,7 +679,7 @@ Goby 录入流程实测完成，应用已带新数据重启（PID 2528）。
 | available 状态 | ✅ true（文件存在） |
 | 文档按钮 | 置灰（同目录无 Ops.md，符合预期） |
 | 重复录入去重 | ✅ 第二次录入同路径被拦截 |
-| 持久化 | ✅ 已写入 [exe-tools.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/exe-tools.json)，id `441addd92bb60488` |
+| 持久化 | ✅ 已写入 [exe-tools.json](file:///d:/ScriptingTool/cmd_tool_web/config/exe-tools.json)，id `441addd92bb60488` |
 
 请到应用窗口左侧点「**EXE 工具**」分类，现在应能看到 **Goby** 卡片（计数 1 个工具）。可继续手工验证三个按钮：
 
@@ -722,13 +722,13 @@ exe工具也有自己各自用处的分类，不能全在EXE 工具一个目录�
 
 ## 工作机制（代码本来就按分类设计好了）
 
-- 每个 EXE 工具在 [exe-tools.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/exe-tools.json) 里都带自己的 `categoryId`，归属各自分类，互不混杂
+- 每个 EXE 工具在 [exe-tools.json](file:///d:/ScriptingTool/cmd_tool_web/config/exe-tools.json) 里都带自己的 `categoryId`，归属各自分类，互不混杂
 - 录入时自动归入**当前左侧选中的分类**，弹窗标题已改为「添加 EXE 工具到「主机扫描」」之类，防录错
 - 每个 EXE 分类页右上都有独立的「＋ 添加 EXE 工具」按钮
 
 ## 以后如何增删 EXE 分类
 
-直接编辑 [menu.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/menu.json)，在 `categories` 里加一段即可，`id` 全局唯一：
+直接编辑 [menu.json](file:///d:/ScriptingTool/cmd_tool_web/config/menu.json)，在 `categories` 里加一段即可，`id` 全局唯一：
 
 ```json
 { "id": "exe-proxy", "name": "代理抓包", "type": "manual" }
@@ -781,19 +781,19 @@ exe 已产出（20:52，9.7MB）且编译进程全部退出，构建成功。先
 2. **桌面快捷方式**：`C:\Users\叶洛\Desktop\工具管理系统.lnk`
    - 指向上述 exe，工作目录为项目根，图标用应用自带 icon.ico
    - 已实测双击启动成功，菜单、工具数据（含主机扫描下的 Goby）均正常加载
-3. **配套修复**：[config.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/config.rs) 的配置定位改为**从 exe 所在位置向上逐级查找 config 目录**——双击快捷方式时系统工作目录不确定，旧的 cwd 逻辑会导致读不到 menu.json/exe-tools.json，现在从 `target\release` 向上三级自动定位到项目根，dev/正式版均兼容
+3. **配套修复**：[config.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/config.rs) 的配置定位改为**从 exe 所在位置向上逐级查找 config 目录**——双击快捷方式时系统工作目录不确定，旧的 cwd 逻辑会导致读不到 menu.json/exe-tools.json，现在从 `target\release` 向上三级自动定位到项目根，dev/正式版均兼容
 
 ## 使用注意
 
-- 配置仍是项目里的 [menu.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/menu.json) 和 [exe-tools.json](file:///d:/Py%20Scripting%20tool/cmd_tool_web/config/exe-tools.json)，正式版里的录入/移除一样会写这两个文件，刷新即生效
-- **不要移动整个项目目录**：快捷方式路径和配置定位都锚定当前位置 `d:\Py Scripting tool\cmd_tool_web`，移动后快捷方式失效；将来重新 `tauri build` 不影响（exe 路径不变，快捷方式仍可用）
+- 配置仍是项目里的 [menu.json](file:///d:/ScriptingTool/cmd_tool_web/config/menu.json) 和 [exe-tools.json](file:///d:/ScriptingTool/cmd_tool_web/config/exe-tools.json)，正式版里的录入/移除一样会写这两个文件，刷新即生效
+- **不要移动整个项目目录**：快捷方式路径和配置定位都锚定当前位置 `d:\ScriptingTool\cmd_tool_web`，移动后快捷方式失效；将来重新 `tauri build` 不影响（exe 路径不变，快捷方式仍可用）
 - 开发模式（`npm run tauri dev`）我已停掉，以后改代码调试时手动启动即可，与桌面正式版互不冲突（同时运行会有两个窗口，注意区分）
 
 ---
 
 **User**
 
-修改项目架构，使当前项目无论在哪个目录都不影响项目业务的运行，不依托于当前项目所在的D:\Py Scripting tool\cmd_tool_web目录
+修改项目架构，使当前项目无论在哪个目录都不影响项目业务的运行，不依托于当前项目所在的D:\ScriptingTool\cmd_tool_web目录
 
 **Assistant**
 
@@ -862,9 +862,9 @@ CDP 端口只在 IPv4 监听，改用 127.0.0.1 重试：
 - `C:\Users\叶洛\AppData\Roaming\com.toolmanager.app\exe-tools.json`
 - 首次启动已自动把项目 config 里的全部数据迁移过来（含你新录的 AppScan）
 
-**桌面快捷方式**已重定向到安装位置。现在 `D:\Py Scripting tool\cmd_tool_web` **整个项目目录移动或删除，都不影响桌面图标启动和日常使用**。
+**桌面快捷方式**已重定向到安装位置。现在 `D:\ScriptingTool\cmd_tool_web` **整个项目目录移动或删除，都不影响桌面图标启动和日常使用**。
 
-## 配置定位的三级规则**（[config.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/config.rs)）
+## 配置定位的三级规则**（[config.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/config.rs)）
 
 1. **便携模式**：在 exe 同目录建 `config\` 文件夹放 menu.json（拷着 exe+config 到 U 盘/别的电脑即绿色运行，优先级最高）
 2. **开发模式**：`tauri dev` 调试时仍读写项目内 `config/`，改完即时生效
@@ -912,8 +912,8 @@ BOM 已写入，重跑全流程：
 
 ## 交付文件（项目根目录）
 
-- **[更新工具管理系统.cmd](file:///d:/Py%20Scripting%20tool/cmd_tool_web/%E6%9B%B4%E6%96%B0%E5%B7%A5%E5%85%B7%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F.cmd)** — 双击入口（绕过 PowerShell 执行策略，可右键发送到桌面快捷方式）
-- [update.ps1](file:///d:/Py%20Scripting%20tool/cmd_tool_web/update.ps1) — 核心逻辑
+- **[更新工具管理系统.cmd](file:///d:/ScriptingTool/cmd_tool_web/%E6%9B%B4%E6%96%B0%E5%B7%A5%E5%85%B7%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F.cmd)** — 双击入口（绕过 PowerShell 执行策略，可右键发送到桌面快捷方式）
+- [update.ps1](file:///d:/ScriptingTool/cmd_tool_web/update.ps1) — 核心逻辑
 
 ## 执行流程
 
@@ -951,8 +951,8 @@ BOM 已写入，重跑全流程：
 
 ## 交付文件（项目根目录）
 
-- **[一键部署.cmd](file:///d:/Py%20Scripting%20tool/cmd_tool_web/%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2.cmd)** — 给其他用户的唯一入口，双击即可
-- [deploy.ps1](file:///d:/Py%20Scripting%20tool/cmd_tool_web/deploy.ps1) — 核心逻辑（已处理 Windows PowerShell 5.1 的中文编码问题）
+- **[一键部署.cmd](file:///d:/ScriptingTool/cmd_tool_web/%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2.cmd)** — 给其他用户的唯一入口，双击即可
+- [deploy.ps1](file:///d:/ScriptingTool/cmd_tool_web/deploy.ps1) — 核心逻辑（已处理 Windows PowerShell 5.1 的中文编码问题）
 
 ## 新用户双击后的完整流程
 
@@ -968,7 +968,7 @@ BOM 已写入，重跑全流程：
 
 - **按需提权**：环境齐全时完全不提权（本机实测就是这种，全程无 UAC）；只有缺 Node/MSVC/WebView2 时才弹一次 UAC 并自动重启提权窗口
 - **PATH 自动刷新**：安装完组件后从注册表重读 PATH 并补 `~\.cargo\bin`，同一窗口内继续执行，不用重启
-- **scanRoot 智能提醒**：部署完成时检测模板里的 `D:\Py Scripting tool\cmd_tool` 在新机器上是否存在，不存在会用黄字提示修改 `%APPDATA%\com.toolmanager.app\menu.json` 后点刷新
+- **scanRoot 智能提醒**：部署完成时检测模板里的 `D:\ScriptingTool\cmd_tool` 在新机器上是否存在，不存在会用黄字提示修改 `%APPDATA%\com.toolmanager.app\menu.json` 后点刷新
 - **失败不沉默**：每步都有明确的 `[OK]/[失败]` 中文提示和手动处理指引，窗口结束时暂停（不会一闪而过）
 - 脚本用自身路径定位项目，项目放哪个盘/哪个目录都不影响
 
@@ -989,7 +989,7 @@ BOM 已写入，重跑全流程：
 这是明确要求的文档，我创建一份精炼的部署指南放在项目根目录。先确认模板配置内容以保证描述准确：
 
 
-部署指南已生成：[新用户部署指南.md](file:///d:/Py%20Scripting%20tool/cmd_tool_web/%E6%96%B0%E7%94%A8%E6%88%B7%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97.md)（项目根目录，建议随项目一起分发）。
+部署指南已生成：[新用户部署指南.md](file:///d:/ScriptingTool/cmd_tool_web/%E6%96%B0%E7%94%A8%E6%88%B7%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97.md)（项目根目录，建议随项目一起分发）。
 
 ## 指南内容（9 个部分）
 
@@ -1070,7 +1070,7 @@ D:\Program\Nmap\zenmap\bin\pythonw.exe -c "from zenmapGUI.App import run;run()"
 - 旧数据完全兼容（无 `args` 字段的记录按无参数处理）
 - 「浏览」按钮仍只选 exe 路径，选完后可手动在输入框里补上参数
 
-改动文件：[exetools.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/exetools.rs)（拆分/校验/去重）、[launcher.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/launcher.rs)（启动透传参数）、[models.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/models.rs)、[launcher.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/api/launcher.ts)、[index.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/types/index.ts)、[ExeToolForm.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ExeToolForm.vue)（提示文案）
+改动文件：[exetools.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/exetools.rs)（拆分/校验/去重）、[launcher.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/launcher.rs)（启动透传参数）、[models.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/models.rs)、[launcher.ts](file:///d:/ScriptingTool/cmd_tool_web/src/api/launcher.ts)、[index.ts](file:///d:/ScriptingTool/cmd_tool_web/src/types/index.ts)、[ExeToolForm.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ExeToolForm.vue)（提示文案）
 
 请试着录入 zenmap 这条命令，然后点「启动工具」确认 Zenmap 界面能正常拉起；有问题把现象发我。
 
@@ -1126,7 +1126,7 @@ D:\Program\Nmap\zenmap\bin\pythonw.exe -c "from zenmapGUI.App import run;run()"
 
 1. **手动同步**：项目 `menu.json` → `%APPDATA%`，已校验 JSON 合法（9 个分类：4 个扫描类 + 5 个 EXE 类）
 2. **修复孤儿数据**：你把分类 `exe-web` 改名成了 `exe-web-scan`，AppScan 的录入记录还挂在旧 id 上会"消失"——已把它的 categoryId 改派到 `exe-web-scan`。Goby 和 pythonw 的 `exe-host-scan` 未变，不受影响
-3. **更新脚本加同步步骤**：[update.ps1](file:///d:/Py%20Scripting%20tool/cmd_tool_web/update.ps1) 现在每次更新会自动把项目 `menu.json` 同步到用户配置目录。**以后你的工作流就是对的**：改项目 `config\menu.json` → 双击「更新工具管理系统.cmd」→ 生效
+3. **更新脚本加同步步骤**：[update.ps1](file:///d:/ScriptingTool/cmd_tool_web/update.ps1) 现在每次更新会自动把项目 `menu.json` 同步到用户配置目录。**以后你的工作流就是对的**：改项目 `config\menu.json` → 双击「更新工具管理系统.cmd」→ 生效
 
 两个注意点：
 
@@ -1149,7 +1149,7 @@ D:\Program\Nmap\zenmap\bin\pythonw.exe -c "from zenmapGUI.App import run;run()"
 
 ## 闪退原因
 
-Windows PowerShell 5.1 读取**无 BOM 的 UTF-8 文件**时会按 GBK 解码，中文注释变成乱码导致解析失败，脚本还没执行到暂停语句窗口就关闭了。这个 BOM 之前特意加过，但我上次用代码编辑器修改 [update.ps1](file:///d:/Py%20Scripting%20tool/cmd_tool_web/update.ps1)（加 menu.json 同步步骤）时被编辑器去掉了。
+Windows PowerShell 5.1 读取**无 BOM 的 UTF-8 文件**时会按 GBK 解码，中文注释变成乱码导致解析失败，脚本还没执行到暂停语句窗口就关闭了。这个 BOM 之前特意加过，但我上次用代码编辑器修改 [update.ps1](file:///d:/ScriptingTool/cmd_tool_web/update.ps1)（加 menu.json 同步步骤）时被编辑器去掉了。
 
 ## 修复与验证
 
@@ -1183,7 +1183,7 @@ exe-tools.json 解析失败: expected value at line 1 column 1
 ## 处理
 
 1. **数据修复**：已去除 BOM，文件内容完好（Goby、AppScan、pythonw 三条记录都在，AppScan 仍在 `exe-web-scan` 分类下），JSON 校验通过
-2. **代码加固**：[exetools.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/exetools.rs) 和 [config.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/config.rs) 的 JSON 解析现在都先剥离 BOM——**以后你或任何工具用带 BOM 的方式保存这两个配置文件，应用都能正常读取**，不会再出现这类解析失败
+2. **代码加固**：[exetools.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/exetools.rs) 和 [config.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/config.rs) 的 JSON 解析现在都先剥离 BOM——**以后你或任何工具用带 BOM 的方式保存这两个配置文件，应用都能正常读取**，不会再出现这类解析失败
 3. 已通过更新脚本重新构建安装，应用正在运行
 
 顺带提醒：你 IDE 里打开的是项目下的 `config\exe-tools.json`（开发模板，现为 `{ "tools": [] }`），真正生效的录入数据在 `%APPDATA%\com.toolmanager.app\exe-tools.json`，两个文件不会再自动同步，看数据请以后者为准。
@@ -1222,7 +1222,7 @@ exe-tools.json 解析失败: expected value at line 1 column 1
 - 展示在卡片大标题下方（原来显示路径的位置），存到 `desc` 字段
 - 留空则不显示该行，卡片更紧凑
 
-**3. 卡片不再显示路径**：[ToolCard.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ToolCard.vue) 移除了路径行（CMD、EXE 所有卡片统一），「打开目录」按钮功能不受影响（内部仍用路径）
+**3. 卡片不再显示路径**：[ToolCard.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ToolCard.vue) 移除了路径行（CMD、EXE 所有卡片统一），「打开目录」按钮功能不受影响（内部仍用路径）
 
 **兼容性**：exe-tools.json 旧记录无需改动（新字段可省略），Goby/AppScan/pythonw 正常显示，只是卡片上不再有路径行。
 
@@ -1252,8 +1252,8 @@ EXE 工具卡片标题栏右侧新增 **✎ 编辑按钮**（在 ✕ 移除按�
 
 ## 实现明细
 
-- 后端：新增 `update_exe_tool` 命令（[exetools.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/exetools.rs)），按 id 更新 title/desc，空串视为清除，返回重新 enrich 的 Tool（标题清空后自动派生逻辑即时生效），已注册到 [lib.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/lib.rs)
-- 前端：[exe.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/api/exe.ts) 加 `updateExeTool`、[tools.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/stores/tools.ts) 加 `updateExe`、新建 [ExeToolEditDialog.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ExeToolEditDialog.vue)、[ToolCard.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ToolCard.vue) 加 ✎ 按钮
+- 后端：新增 `update_exe_tool` 命令（[exetools.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/exetools.rs)），按 id 更新 title/desc，空串视为清除，返回重新 enrich 的 Tool（标题清空后自动派生逻辑即时生效），已注册到 [lib.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/lib.rs)
+- 前端：[exe.ts](file:///d:/ScriptingTool/cmd_tool_web/src/api/exe.ts) 加 `updateExeTool`、[tools.ts](file:///d:/ScriptingTool/cmd_tool_web/src/stores/tools.ts) 加 `updateExe`、新建 [ExeToolEditDialog.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ExeToolEditDialog.vue)、[ToolCard.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ToolCard.vue) 加 ✎ 按钮
 - 只改标题/副标题，不动路径、参数、分类归属；CMD 类卡片无此按钮
 
 现在可以顺手把 pythonw 卡片的标题改成「Zenmap」、副标题填「Nmap 图形化扫描界面」试试效果。
@@ -1287,8 +1287,8 @@ CMD 工具是每次扫描动态生成的，本身不落盘，所以修改保存�
 
 ## 改动文件
 
-- 后端：[scanner.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/commands/scanner.rs)（覆盖存取 + `update_cmd_tool` 命令 + 扫描时应用覆盖）、[lib.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/lib.rs)（注册命令）
-- 前端：[fs.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/api/fs.ts)（`updateCmdTool`）、[tools.ts](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/stores/tools.ts)（`updateCmd`）、[ExeToolEditDialog.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ExeToolEditDialog.vue)（按工具类型分流保存）、[ToolCard.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ToolCard.vue)（✎ 全类型显示）
+- 后端：[scanner.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/commands/scanner.rs)（覆盖存取 + `update_cmd_tool` 命令 + 扫描时应用覆盖）、[lib.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/lib.rs)（注册命令）
+- 前端：[fs.ts](file:///d:/ScriptingTool/cmd_tool_web/src/api/fs.ts)（`updateCmdTool`）、[tools.ts](file:///d:/ScriptingTool/cmd_tool_web/src/stores/tools.ts)（`updateCmd`）、[ExeToolEditDialog.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ExeToolEditDialog.vue)（按工具类型分流保存）、[ToolCard.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ToolCard.vue)（✎ 全类型显示）
 
 一个注意点：CMD 工具的 id 由**目录路径**哈希生成，如果某个工具文件夹被移动或改名，它的覆盖记录会失联（标题恢复自动）——重新编辑一次即可。
 
@@ -1324,7 +1324,7 @@ CMD 工具是每次扫描动态生成的，本身不落盘，所以修改保存�
 - 新目录 id 自动生成（`cat-` + 哈希），不与现有冲突；同名目录会被拦截
 - 新建 scan 类目录默认**全量扫描** scanRoot；如需指定子目录名单，仍需编辑 menu.json 的 `dirs` 字段（弹窗里有提示）
 - 删除目录不会动 exe-tools.json 里的数据（变成无分类孤儿）；重命名安全无损
-- menu.json 保存时不再写出空的 `dirs: []` / `scanPath: null`，保持文件整洁（[models.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/models.rs) 加了 skip 序列化）
+- menu.json 保存时不再写出空的 `dirs: []` / `scanPath: null`，保持文件整洁（[models.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/models.rs) 加了 skip 序列化）
 
 **一个需要知道的交互**：更新脚本每次运行会把项目 `config\menu.json` 同步覆盖到用户目录——如果你这次在界面上加了目录，**记得也在项目 menu.json 里同步一份**，否则下次跑「更新工具管理系统.cmd」时界面新增的目录会被项目旧文件覆盖掉。如果你希望更新脚本改为"不覆盖已存在的 menu.json"（只首次部署时初始化），告诉我即可调整。
 
@@ -1348,7 +1348,7 @@ CMD 工具是每次扫描动态生成的，本身不落盘，所以修改保存�
 - **黄色警示条**（仅 EXE 类目录且内有工具时）：删除后其下 EXE 录入将不再显示，数据保留在 exe-tools.json 可恢复
 - **按钮**：取消 / 红色「删除」；支持 Esc 或点遮罩取消，删除失败会在框内显示错误
 
-改动：新建 [ConfirmDeleteDialog.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/layout/ConfirmDeleteDialog.vue)，[SideBar.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/layout/SideBar.vue) 的 🗑 按钮改为打开该弹窗。纯前端改动，类型检查通过，已构建安装。
+改动：新建 [ConfirmDeleteDialog.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/layout/ConfirmDeleteDialog.vue)，[SideBar.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/layout/SideBar.vue) 的 🗑 按钮改为打开该弹窗。纯前端改动，类型检查通过，已构建安装。
 
 ---
 
@@ -1411,7 +1411,7 @@ CMD 工具是每次扫描动态生成的，本身不落盘，所以修改保存�
 - 设置持久化到 `%APPDATA%\com.toolmanager.app\settings.json`，重启保留；损坏自动回退默认
 - 所有弹窗（文档/录入/编辑/目录管理）做了变量隔离，深色主题下弹窗仍保持白底深字，不影响阅读
 
-**小插曲**：构建时报 `settings` 模块未导入（[lib.rs](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src-tauri/src/lib.rs#L4) 的 use 列表漏加，此前 cargo check 命中缓存未暴露），已修复。
+**小插曲**：构建时报 `settings` 模块未导入（[lib.rs](file:///d:/ScriptingTool/cmd_tool_web/src-tauri/src/lib.rs#L4) 的 use 列表漏加，此前 cargo check 命中缓存未暴露），已修复。
 
 请打开 🎨 试切浅色/深色、拖透明度、导入一张本地图片；若某处文字/控件在主题下对比度不佳，截图告诉我具体位置。
 
@@ -1435,8 +1435,8 @@ CMD 工具是每次扫描动态生成的，本身不落盘，所以修改保存�
 
 修复代码已就绪（在被打断前已完成两处修改），正好对应你的要求：
 
-1. [global.css](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/styles/global.css)：`body { overflow: hidden }` —— 视口本身永不滚动
-2. [SideBar.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/layout/SideBar.vue#L96-L101)：`.menu { min-height: 0 }` —— 这是根因：flex 子项默认 `min-height: auto`，目录项多时会把侧栏撑出视口，导致整页可拖；修复后目录区域在超出时自己出滚动条。右侧内容区原本就有 `overflow-y: auto`，行为不变
+1. [global.css](file:///d:/ScriptingTool/cmd_tool_web/src/styles/global.css)：`body { overflow: hidden }` —— 视口本身永不滚动
+2. [SideBar.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/layout/SideBar.vue#L96-L101)：`.menu { min-height: 0 }` —— 这是根因：flex 子项默认 `min-height: auto`，目录项多时会把侧栏撑出视口，导致整页可拖；修复后目录区域在超出时自己出滚动条。右侧内容区原本就有 `overflow-y: auto`，行为不变
 
 需要重新构建安装才能生效，执行更新：
 
@@ -1464,7 +1464,7 @@ CMD 工具是每次扫描动态生成的，本身不落盘，所以修改保存�
 - **悬浮卡片**：✎ 编辑、✕ 移除（仅 EXE）淡出在**标签左侧**出现
 - **标签固定在卡片右边缘**：按钮出现/消失只向左弹性扩展（标题栏多余空间自动吸收，长标题以省略号收缩），标签不位移、右侧也不会出现空缺
 
-纯 [ToolCard.vue](file:///d:/Py%20Scripting%20tool/cmd_tool_web/src/components/tool/ToolCard.vue) 改动：模板中 tag 移到按钮之后，按钮默认 `display: none`、`.card:hover` 时显示。可以悬浮几张卡片（CMD 和 EXE 各试一张）确认效果。
+纯 [ToolCard.vue](file:///d:/ScriptingTool/cmd_tool_web/src/components/tool/ToolCard.vue) 改动：模板中 tag 移到按钮之后，按钮默认 `display: none`、`.card:hover` 时显示。可以悬浮几张卡片（CMD 和 EXE 各试一张）确认效果。
 
 ---
 
