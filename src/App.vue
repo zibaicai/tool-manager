@@ -8,6 +8,7 @@ import { useSettingsStore } from './stores/settings';
 
 const store = useToolsStore();
 const settings = useSettingsStore();
+
 onMounted(() => {
   settings.init();
   store.init();
@@ -30,8 +31,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* 主题模式下为半透明蒙层，背景图（body）从标题栏到内容区整窗透出 */
-  background: var(--bg);
 }
 .body {
   flex: 1;
