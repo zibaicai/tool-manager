@@ -17,6 +17,11 @@
   --btn-danger-text: #c92a2a;
   --btn-danger-border: #f3c2c2;
   --btn-danger-hover-bg: #fbdcdc;
+  /* 自绘标题栏：默认模式不透明（无背景图） */
+  --titlebar-bg: #f5f6f8;
+  --titlebar-fg: #1f2329;
+  --titlebar-border: rgba(0, 0, 0, 0.08);
+  --titlebar-hover: rgba(0, 0, 0, 0.07);
 }
 
 /* ===== 主题模式（settings store 注入 --page-alpha / --card-alpha / --btn-alpha） =====
@@ -46,6 +51,11 @@
   --btn-danger-text: #c92a2a;
   --btn-danger-border: rgba(243, 194, 194, var(--btn-alpha, 1));
   --btn-danger-hover-bg: #fbdcdc;
+  /* 自绘标题栏：半透明毛玻璃，让背景图透出来 */
+  --titlebar-bg: rgba(255, 255, 255, 0.22);
+  --titlebar-fg: #1f2329;
+  --titlebar-border: rgba(0, 0, 0, 0.08);
+  --titlebar-hover: rgba(0, 0, 0, 0.07);
 }
 
 :root[data-theme='dark'] {
@@ -73,4 +83,9 @@
   --btn-danger-text: #f3b0b0;
   --btn-danger-border: rgba(220, 120, 120, var(--btn-alpha, 1));
   --btn-danger-hover-bg: #8f2f2f;
+  /* 自绘标题栏：半透明深色毛玻璃，让背景图透出来 */
+  --titlebar-bg: rgba(10, 14, 20, 0.35);
+  --titlebar-fg: #cfd6e4;
+  --titlebar-border: rgba(255, 255, 255, 0.06);
+  --titlebar-hover: rgba(255, 255, 255, 0.1);
 }
