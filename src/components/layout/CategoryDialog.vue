@@ -97,9 +97,11 @@ async function submit() {
   z-index: 1000;
 }
 .dialog {
-  background: #fff;
-  --text: #1f2329;
-  --text-sub: #6b7280;
+  background: var(--dialog-bg);
+  backdrop-filter: blur(var(--dialog-blur));
+  -webkit-backdrop-filter: blur(var(--dialog-blur));
+  --text: var(--dialog-fg);
+  --text-sub: var(--dialog-fg-sub);
   width: min(440px, 92vw);
   border-radius: 8px;
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.2);
@@ -109,7 +111,7 @@ async function submit() {
   align-items: center;
   justify-content: space-between;
   padding: 12px 18px;
-  border-bottom: 1px solid var(--card-border);
+  border-bottom: 1px solid var(--dialog-border);
   font-size: 15px;
   font-weight: 600;
 }
@@ -122,7 +124,7 @@ async function submit() {
   border-radius: 4px;
 }
 .close-btn:hover {
-  background: #f0f1f3;
+  background: var(--dialog-hover);
   color: var(--text);
 }
 .dialog-body {
@@ -143,10 +145,10 @@ async function submit() {
   box-sizing: border-box;
   padding: 7px 10px;
   font-size: 13px;
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   outline: none;
-  background: #fff;
+  background: var(--input-bg);
 }
 .text-input:focus {
   border-color: var(--primary);
@@ -167,17 +169,17 @@ async function submit() {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 18px;
-  border-top: 1px solid var(--card-border);
+  border-top: 1px solid var(--dialog-border);
 }
 .btn {
   padding: 7px 18px;
   font-size: 13px;
-  border: 1px solid var(--card-border);
-  background: #fff;
+  border: 1px solid var(--dialog-border);
+  background: var(--dialog-btn-bg);
   border-radius: 6px;
 }
 .btn:hover:not(:disabled) {
-  background: #f3f5f8;
+  background: var(--dialog-btn-hover);
 }
 .btn.primary {
   background: var(--primary);

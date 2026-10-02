@@ -71,9 +71,11 @@ onBeforeUnmount(() => {
   z-index: 1000;
 }
 .panel {
-  background: #fff;
-  --text: #1f2329;
-  --text-sub: #6b7280;
+  background: var(--dialog-bg);
+  backdrop-filter: blur(var(--dialog-blur));
+  -webkit-backdrop-filter: blur(var(--dialog-blur));
+  --text: var(--dialog-fg);
+  --text-sub: var(--dialog-fg-sub);
   width: min(880px, 94vw);
   height: 100vh;
   display: flex;
@@ -85,7 +87,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  border-bottom: 1px solid var(--card-border);
+  border-bottom: 1px solid var(--dialog-border);
   flex-shrink: 0;
 }
 .doc-title {
@@ -105,7 +107,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 .close-btn:hover {
-  background: #f0f1f3;
+  background: var(--dialog-hover);
   color: var(--text);
 }
 .panel-body {
@@ -141,12 +143,12 @@ onBeforeUnmount(() => {
 .markdown-body :deep(h1) {
   font-size: 22px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid var(--dialog-border);
 }
 .markdown-body :deep(h2) {
   font-size: 18px;
   padding-bottom: 6px;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid var(--dialog-border);
 }
 .markdown-body :deep(h3) {
   font-size: 16px;
@@ -179,12 +181,12 @@ onBeforeUnmount(() => {
 .markdown-body :deep(code) {
   font-family: Consolas, 'Courier New', monospace;
   font-size: 13px;
-  background: #f3f4f6;
+  background: var(--dialog-code-bg);
   padding: 2px 5px;
   border-radius: 4px;
 }
 .markdown-body :deep(pre) {
-  background: #f6f8fa;
+  background: var(--dialog-code-block-bg);
   padding: 12px 14px;
   border-radius: 6px;
   overflow-x: auto;
@@ -193,11 +195,83 @@ onBeforeUnmount(() => {
   background: transparent;
   padding: 0;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+/* ---- highlight.js 语法高亮：token 配色全部来自 --code-* 主题变量 ----
+   只按官方 token class 着单 span 的颜色，不做通杀覆盖，保证高亮层级不丢失 */
+.markdown-body :deep(.hljs) {
+  color: var(--code-fg);
+  font-family: Consolas, 'Courier New', monospace;
+}
+.markdown-body :deep(.hljs-comment),
+.markdown-body :deep(.hljs-quote) {
+  color: var(--code-comment);
+  font-style: italic;
+}
+.markdown-body :deep(.hljs-keyword),
+.markdown-body :deep(.hljs-selector-tag),
+.markdown-body :deep(.hljs-doctag) {
+  color: var(--code-keyword);
+}
+.markdown-body :deep(.hljs-string),
+.markdown-body :deep(.hljs-regexp) {
+  color: var(--code-string);
+}
+.markdown-body :deep(.hljs-number),
+.markdown-body :deep(.hljs-literal) {
+  color: var(--code-number);
+}
+.markdown-body :deep(.hljs-title),
+.markdown-body :deep(.hljs-section) {
+  color: var(--code-title);
+}
+.markdown-body :deep(.hljs-built_in),
+.markdown-body :deep(.hljs-type) {
+  color: var(--code-builtin);
+}
+.markdown-body :deep(.hljs-name),
+.markdown-body :deep(.hljs-tag) {
+  color: var(--code-tag);
+}
+.markdown-body :deep(.hljs-attr),
+.markdown-body :deep(.hljs-attribute),
+.markdown-body :deep(.hljs-selector-class),
+.markdown-body :deep(.hljs-selector-id) {
+  color: var(--code-attr);
+}
+.markdown-body :deep(.hljs-meta),
+.markdown-body :deep(.hljs-meta .hljs-keyword) {
+  color: var(--code-meta);
+}
+.markdown-body :deep(.hljs-symbol),
+.markdown-body :deep(.hljs-bullet) {
+  color: var(--code-symbol);
+}
+.markdown-body :deep(.hljs-variable),
+.markdown-body :deep(.hljs-template-variable),
+.markdown-body :deep(.hljs-selector-attr) {
+  color: var(--code-variable);
+}
+.markdown-body :deep(.hljs-addition) {
+  color: var(--code-addition);
+  background-color: var(--code-addition-bg);
+  border-radius: 3px;
+}
+.markdown-body :deep(.hljs-deletion) {
+  color: var(--code-deletion);
+  background-color: var(--code-deletion-bg);
+  border-radius: 3px;
+}
+.markdown-body :deep(.hljs-emphasis) {
+  font-style: italic;
+}
+.markdown-body :deep(.hljs-strong) {
+  font-weight: 600;
 }
 .markdown-body :deep(blockquote) {
   padding: 4px 14px;
-  border-left: 3px solid #d1d5db;
+  border-left: 3px solid var(--input-border);
   color: var(--text-sub);
 }
 .markdown-body :deep(table) {
@@ -208,17 +282,17 @@ onBeforeUnmount(() => {
 }
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--input-border);
   padding: 6px 12px;
   text-align: left;
 }
 .markdown-body :deep(th) {
-  background: #f6f8fa;
+  background: var(--dialog-code-block-bg);
   font-weight: 600;
 }
 .markdown-body :deep(hr) {
   border: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--dialog-border);
   margin: 20px 0;
 }
 .markdown-body :deep(img) {

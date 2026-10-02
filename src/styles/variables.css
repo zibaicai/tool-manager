@@ -22,6 +22,42 @@
   --titlebar-fg: #1f2329;
   --titlebar-border: rgba(0, 0, 0, 0.08);
   --titlebar-hover: rgba(0, 0, 0, 0.07);
+  /* 全局滚动条（浅底深滑块） */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.22);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.38);
+  /* 弹窗面板：--dialog-alpha/--dialog-blur 由 settings store 注入（默认不透明白底） */
+  --dialog-bg: rgba(255, 255, 255, var(--dialog-alpha, 1));
+  --dialog-fg: #1f2329;
+  --dialog-fg-sub: #6b7280;
+  --dialog-border: #e5e7eb;
+  --dialog-hover: #f0f1f3;
+  --dialog-soft: #fafbfc;
+  --dialog-btn-bg: #ffffff;
+  --dialog-btn-hover: #f3f5f8;
+  --dialog-code-bg: #f3f4f6;
+  --dialog-code-block-bg: #f6f8fa;
+  /* 代码语法高亮（GitHub Light 配色，保证浅底深字高对比） */
+  --code-fg: #24292f;
+  --code-comment: #6e7781;
+  --code-keyword: #cf222e;
+  --code-string: #0a3069;
+  --code-number: #0550ae;
+  --code-title: #8250df;
+  --code-builtin: #6639ba;
+  --code-tag: #116329;
+  --code-attr: #0550ae;
+  --code-meta: #6e7781;
+  --code-symbol: #953800;
+  --code-variable: #953800;
+  --code-addition: #116329;
+  --code-addition-bg: rgba(46, 160, 67, 0.12);
+  --code-deletion: #82071e;
+  --code-deletion-bg: rgba(248, 81, 73, 0.12);
+  /* 输入框：未聚焦默认有一条跟随主题的可见边框 */
+  --input-border: #c4c9d1;
+  --input-bg: #ffffff;
+  --input-fg: #1f2329;
+  --input-placeholder: #9aa1ad;
 }
 
 /* ===== 主题模式（settings store 注入 --page-alpha / --card-alpha / --btn-alpha） =====
@@ -56,6 +92,41 @@
   --titlebar-fg: #1f2329;
   --titlebar-border: rgba(0, 0, 0, 0.08);
   --titlebar-hover: rgba(0, 0, 0, 0.07);
+  /* 全局滚动条：浅色主题深滑块 */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.35);
+  /* 弹窗面板（浅色主题同默认配色，仅 alpha/模糊度不同） */
+  --dialog-bg: rgba(255, 255, 255, var(--dialog-alpha, 1));
+  --dialog-fg: #1f2329;
+  --dialog-fg-sub: #6b7280;
+  --dialog-border: #e5e7eb;
+  --dialog-hover: #f0f1f3;
+  --dialog-soft: #fafbfc;
+  --dialog-btn-bg: #ffffff;
+  --dialog-btn-hover: #f3f5f8;
+  --dialog-code-bg: #f3f4f6;
+  --dialog-code-block-bg: #f6f8fa;
+  /* 代码语法高亮（浅色主题同默认） */
+  --code-fg: #24292f;
+  --code-comment: #6e7781;
+  --code-keyword: #cf222e;
+  --code-string: #0a3069;
+  --code-number: #0550ae;
+  --code-title: #8250df;
+  --code-builtin: #6639ba;
+  --code-tag: #116329;
+  --code-attr: #0550ae;
+  --code-meta: #6e7781;
+  --code-symbol: #953800;
+  --code-variable: #953800;
+  --code-addition: #116329;
+  --code-addition-bg: rgba(46, 160, 67, 0.12);
+  --code-deletion: #82071e;
+  --code-deletion-bg: rgba(248, 81, 73, 0.12);
+  --input-border: #b8bec8;
+  --input-bg: #ffffff;
+  --input-fg: #1f2329;
+  --input-placeholder: #9aa1ad;
 }
 
 :root[data-theme='dark'] {
@@ -88,4 +159,41 @@
   --titlebar-fg: #cfd6e4;
   --titlebar-border: rgba(255, 255, 255, 0.06);
   --titlebar-hover: rgba(255, 255, 255, 0.1);
+  /* 全局滚动条：深色主题浅滑块 */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+  /* 弹窗面板：深色毛玻璃 */
+  --dialog-bg: rgba(30, 34, 41, var(--dialog-alpha, 1));
+  --dialog-fg: #e6e9ee;
+  --dialog-fg-sub: #9aa1ad;
+  --dialog-border: rgba(255, 255, 255, 0.12);
+  --dialog-hover: rgba(255, 255, 255, 0.08);
+  --dialog-soft: rgba(255, 255, 255, 0.05);
+  --dialog-btn-bg: rgba(255, 255, 255, 0.06);
+  --dialog-btn-hover: rgba(255, 255, 255, 0.12);
+  --dialog-code-bg: rgba(255, 255, 255, 0.1);
+  --dialog-code-block-bg: rgba(255, 255, 255, 0.07);
+  /* 代码语法高亮（GitHub Dark 配色，深底亮字保证可读性） */
+  --code-fg: #e6edf3;
+  --code-comment: #8b949e;
+  --code-keyword: #ff7b72;
+  --code-string: #a5d6ff;
+  --code-number: #79c0ff;
+  --code-title: #d2a8ff;
+  --code-builtin: #ffa657;
+  --code-tag: #7ee787;
+  --code-attr: #79c0ff;
+  --code-meta: #8b949e;
+  --code-symbol: #ffa657;
+  --code-variable: #ffa657;
+  --code-addition: #7ee787;
+  --code-addition-bg: rgba(46, 160, 67, 0.18);
+  --code-deletion: #ffdcd7;
+  --code-deletion-bg: rgba(248, 81, 73, 0.18);
+  /* 输入框：深色底 + 浅描边，原生下拉也跟随深色 */
+  --input-border: #4b5260;
+  --input-bg: #1d222b;
+  --input-fg: #e6e9ee;
+  --input-placeholder: #7c8493;
+  color-scheme: dark;
 }

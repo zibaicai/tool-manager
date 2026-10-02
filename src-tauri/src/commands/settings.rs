@@ -22,6 +22,12 @@ pub struct ThemeSettings {
     /// 页面透明度 0 ~ 1.0
     #[serde(default = "default_opacity")]
     pub opacity: f64,
+    /// 弹窗背景不透明度 0 ~ 1.0（1.0 = 完全不透明）
+    #[serde(default = "default_dialog_opacity")]
+    pub dialog_opacity: f64,
+    /// 弹窗背景高斯模糊半径（px），0 = 不模糊
+    #[serde(default = "default_dialog_blur")]
+    pub dialog_blur: f64,
     /// 背景图："builtin:light-1" 或自定义图片绝对路径
     #[serde(default)]
     pub bg: Option<String>,
@@ -35,12 +41,20 @@ fn default_mode() -> String {
 fn default_opacity() -> f64 {
     0.85
 }
+fn default_dialog_opacity() -> f64 {
+    1.0
+}
+fn default_dialog_blur() -> f64 {
+    0.0
+}
 
 impl Default for ThemeSettings {
     fn default() -> Self {
         Self {
             mode: default_mode(),
             opacity: default_opacity(),
+            dialog_opacity: default_dialog_opacity(),
+            dialog_blur: default_dialog_blur(),
             bg: None,
             custom_bgs: vec![],
         }
@@ -65,7 +79,14 @@ pub fn load_theme_settings(app: AppHandle) -> Result<ThemeSettings, String> {
 #[tauri::command]
 pub fn save_theme_settings(app: AppHandle, settings: ThemeSettings) -> Result<(), String> {
     let opacity = settings.opacity.clamp(0.0, 1.0);
-    let fixed = ThemeSettings { opacity, ..settings };
+    let dialog_opacity = settings.dialog_opacity.clamp(0.0, 1.0);
+    let dialog_blur = settings.dialog_blur.clamp(0.0, 60.0);
+    let fixed = ThemeSettings {
+        opacity,
+        dialog_opacity,
+        dialog_blur,
+        ..settings
+    };
     let json = serde_json::to_string_pretty(&fixed).map_err(|e| e.to_string())?;
     fs::write(settings_file(&app)?, json).map_err(|e| format!("写入 settings.json 失败: {}", e))
 }

@@ -18,3 +18,53 @@ button {
   cursor: pointer;
   font: inherit;
 }
+
+/* ===== 全局滚动条：统一细窄圆角样式，滑块色由主题变量驱动 =====
+   深浅主题宽度一致（10px 槽 / 6px 滑块），切换主题不产生布局抖动；
+   WebView2(Chromium) 走 ::-webkit-scrollbar，同时保留 Firefox 标准属性 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* ===== 全局输入框：未聚焦时也有一条跟随主题的可见边框 =====
+   只统一颜色，尺寸/圆角/内边距仍由各组件控制；聚焦态保持各组件原样式不变 */
+input[type='text'],
+input[type='search'],
+input[type='password'],
+input[type='email'],
+input[type='url'],
+input[type='number'],
+input:not([type]),
+textarea,
+select {
+  border-color: var(--input-border);
+  background-color: var(--input-bg);
+  color: var(--input-fg);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder);
+}

@@ -12,7 +12,8 @@ import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
 import go from 'highlight.js/lib/languages/go';
 import rust from 'highlight.js/lib/languages/rust';
-import 'highlight.js/styles/github.css';
+// 注意：不引入 highlight.js 自带的 github.css（写死浅色），
+// 语法高亮 token 配色由 variables.css 的 --code-* 变量按浅/深主题提供，DocDialog.vue 消费
 
 hljs.registerLanguage('python', python);
 hljs.registerLanguage('bash', bash);

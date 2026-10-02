@@ -18,15 +18,26 @@ export function bgUrl(bg: string): string {
 export const useSettingsStore = defineStore('settings', () => {
   const mode = ref<'default' | 'light' | 'dark'>('default');
   const opacity = ref(0.85);
+  const dialogOpacity = ref(1);
+  const dialogBlur = ref(0);
   const bg = ref<string | null>(null);
   const customBgs = ref<CustomBg[]>([]);
 
   const themed = computed(() => mode.value !== 'default');
 
+  /** 弹窗参数与主题模式无关，默认/浅色/深色下都注入到根节点 */
+  function applyDialogVars(root: HTMLElement) {
+    const a = Math.min(1, Math.max(0, dialogOpacity.value));
+    const b = Math.min(60, Math.max(0, dialogBlur.value));
+    root.style.setProperty('--dialog-alpha', String(a));
+    root.style.setProperty('--dialog-blur', `${b}px`);
+  }
+
   /** 把当前设置应用到 DOM（root data-theme + 透明度变量 + body 背景图） */
   function apply() {
     const root = document.documentElement;
     const body = document.body;
+    applyDialogVars(root);
     if (mode.value === 'default') {
       root.removeAttribute('data-theme');
       body.style.backgroundImage = '';
@@ -48,6 +59,8 @@ export const useSettingsStore = defineStore('settings', () => {
     await saveThemeSettings({
       mode: mode.value,
       opacity: opacity.value,
+      dialogOpacity: dialogOpacity.value,
+      dialogBlur: dialogBlur.value,
       bg: bg.value,
       customBgs: customBgs.value,
     });
@@ -61,6 +74,8 @@ export const useSettingsStore = defineStore('settings', () => {
         | 'light'
         | 'dark';
       opacity.value = s.opacity;
+      dialogOpacity.value = s.dialogOpacity ?? 1;
+      dialogBlur.value = s.dialogBlur ?? 0;
       bg.value = s.bg;
       customBgs.value = s.customBgs ?? [];
     } catch {
@@ -83,6 +98,18 @@ export const useSettingsStore = defineStore('settings', () => {
 
   async function setOpacity(v: number) {
     opacity.value = v;
+    apply();
+    await persist();
+  }
+
+  async function setDialogOpacity(v: number) {
+    dialogOpacity.value = v;
+    apply();
+    await persist();
+  }
+
+  async function setDialogBlur(v: number) {
+    dialogBlur.value = v;
     apply();
     await persist();
   }
@@ -126,12 +153,16 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     mode,
     opacity,
+    dialogOpacity,
+    dialogBlur,
     bg,
     customBgs,
     themed,
     init,
     setMode,
     setOpacity,
+    setDialogOpacity,
+    setDialogBlur,
     selectBg,
     importBg,
     removeCustomBg,

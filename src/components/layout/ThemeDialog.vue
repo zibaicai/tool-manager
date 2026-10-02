@@ -57,6 +57,33 @@ onBeforeUnmount(() => {
             </button>
           </div>
 
+          <label class="field-label">
+            弹窗不透明度 <span class="opacity-val">{{ Math.round(settings.dialogOpacity * 100) }}%</span>
+          </label>
+          <input
+            class="opacity-slider"
+            type="range"
+            min="0.3"
+            max="1"
+            step="0.05"
+            :value="settings.dialogOpacity"
+            @input="settings.setDialogOpacity(Number(($event.target as HTMLInputElement).value))"
+          />
+
+          <label class="field-label">
+            弹窗背景模糊 <span class="opacity-val">{{ Math.round(settings.dialogBlur) }}px</span>
+          </label>
+          <input
+            class="opacity-slider"
+            type="range"
+            min="0"
+            max="30"
+            step="1"
+            :value="settings.dialogBlur"
+            @input="settings.setDialogBlur(Number(($event.target as HTMLInputElement).value))"
+          />
+          <p class="hint">对所有弹窗生效（添加/编辑工具、删除确认、文档等），拖动时本窗口实时预览。</p>
+
           <template v-if="settings.themed">
             <label class="field-label">
               页面透明度 <span class="opacity-val">{{ Math.round(settings.opacity * 100) }}%</span>
@@ -124,9 +151,11 @@ onBeforeUnmount(() => {
   z-index: 1000;
 }
 .dialog {
-  background: #fff;
-  --text: #1f2329;
-  --text-sub: #6b7280;
+  background: var(--dialog-bg);
+  backdrop-filter: blur(var(--dialog-blur));
+  -webkit-backdrop-filter: blur(var(--dialog-blur));
+  --text: var(--dialog-fg);
+  --text-sub: var(--dialog-fg-sub);
   width: min(520px, 94vw);
   border-radius: 8px;
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.2);
@@ -136,7 +165,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 18px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--dialog-border);
   font-size: 15px;
   font-weight: 600;
   color: var(--text);
@@ -150,7 +179,7 @@ onBeforeUnmount(() => {
   border-radius: 4px;
 }
 .close-btn:hover {
-  background: #f0f1f3;
+  background: var(--dialog-hover);
   color: var(--text);
 }
 .dialog-body {
@@ -177,16 +206,16 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 2px;
   padding: 10px 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--dialog-border);
   border-radius: 8px;
-  background: #fafbfc;
+  background: var(--dialog-soft);
 }
 .mode-card:hover {
-  border-color: #c6cdd6;
+  border-color: var(--input-border);
 }
 .mode-card.active {
-  border-color: #2f8cff;
-  background: #eef4ff;
+  border-color: var(--primary);
+  background: rgba(47, 140, 255, 0.16);
 }
 .mode-name {
   font-size: 13px;
@@ -223,7 +252,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border: 2px solid transparent;
   cursor: pointer;
-  background: #f0f1f3;
+  background: var(--dialog-hover);
 }
 .bg-cell img {
   width: 100%;
@@ -232,10 +261,10 @@ onBeforeUnmount(() => {
   display: block;
 }
 .bg-cell:hover {
-  border-color: #c6cdd6;
+  border-color: var(--input-border);
 }
 .bg-cell.active {
-  border-color: #2f8cff;
+  border-color: var(--primary);
 }
 .bg-cell.import {
   display: flex;
@@ -245,12 +274,12 @@ onBeforeUnmount(() => {
   gap: 2px;
   font-size: 20px;
   color: var(--text-sub);
-  border: 1px dashed #c6cdd6;
+  border: 1px dashed var(--input-border);
   background: transparent;
 }
 .bg-cell.import:hover {
-  color: #2f8cff;
-  border-color: #2f8cff;
+  color: var(--primary);
+  border-color: var(--primary);
 }
 .import-text {
   font-size: 11px;
