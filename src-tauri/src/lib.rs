@@ -1,4 +1,5 @@
 mod commands;
+mod constants;
 mod models;
 
 use commands::{config, exetools, launcher, scanner, settings};

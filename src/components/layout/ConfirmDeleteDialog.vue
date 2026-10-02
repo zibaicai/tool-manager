@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useToolsStore } from '../../stores/tools';
+import { CATEGORY_TYPES } from '../../constants';
 
 const props = defineProps<{ categoryId: string }>();
 const emit = defineEmits<{ close: [] }>();
@@ -55,10 +56,10 @@ async function confirmDelete() {
             确定删除目录 <strong class="cat-name">「{{ cat?.name }}」</strong> 吗？
           </p>
           <p class="meta">
-            类型：{{ cat?.type === 'manual' ? 'EXE 手动录入' : 'CMD 自动扫描' }}
+            类型：{{ cat?.type === CATEGORY_TYPES.MANUAL ? 'EXE 手动录入' : 'CMD 自动扫描' }}
             <span v-if="toolCount > 0"> · 当前含 {{ toolCount }} 个工具</span>
           </p>
-          <p v-if="cat?.type === 'manual' && toolCount > 0" class="warn">
+          <p v-if="cat?.type === CATEGORY_TYPES.MANUAL && toolCount > 0" class="warn">
             删除后其下 EXE 录入将不再显示（数据保留在 exe-tools.json，重新录入可恢复）。
           </p>
           <p v-if="error" class="error">{{ error }}</p>

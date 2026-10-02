@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Category, Tool } from '../types';
+import type { CategoryType } from '../constants';
+import { DEFAULT_WEIGHT } from '../constants';
 import { addCategory, deleteCategory, loadMenuConfig, renameCategory, setScanRoot } from '../api/config';
 import { scanAllCmdTools, updateCmdTool, assignCmdTool } from '../api/fs';
 import { addExeTool, loadExeTools, removeExeTool, updateExeTool } from '../api/exe';
@@ -19,7 +21,9 @@ export const useToolsStore = defineStore('tools', () => {
 
   /** 侧边栏展示顺序：权重降序（越大越靠前），同权重保持配置文件原顺序（依赖稳定排序） */
   const sortedCategories = computed(() =>
-    [...categories.value].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0)),
+    [...categories.value].sort(
+      (a, b) => (b.weight ?? DEFAULT_WEIGHT) - (a.weight ?? DEFAULT_WEIGHT),
+    ),
   );
 
   async function init() {
@@ -115,8 +119,8 @@ export const useToolsStore = defineStore('tools', () => {
   /** 新增目录并切换过去；weight 为排序权重（越大越靠前，默认 0） */
   async function addCat(
     name: string,
-    type: 'scan' | 'manual',
-    weight = 0,
+    type: CategoryType,
+    weight = DEFAULT_WEIGHT,
   ): Promise<void> {
     const cat = await addCategory(name, type, weight);
     await refresh();

@@ -1,4 +1,8 @@
 use crate::commands::config::ensure_config_dir;
+use crate::constants::{
+    strip_bom, DEFAULT_DIALOG_BLUR, DEFAULT_DIALOG_OPACITY, DEFAULT_PAGE_OPACITY, DIALOG_BLUR_MAX,
+    OPACITY_MAX, OPACITY_MIN, SETTINGS_FILE, THEME_MODE_DEFAULT,
+};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use tauri::AppHandle;
@@ -36,16 +40,16 @@ pub struct ThemeSettings {
 }
 
 fn default_mode() -> String {
-    "default".into()
+    THEME_MODE_DEFAULT.into()
 }
 fn default_opacity() -> f64 {
-    0.85
+    DEFAULT_PAGE_OPACITY
 }
 fn default_dialog_opacity() -> f64 {
-    1.0
+    DEFAULT_DIALOG_OPACITY
 }
 fn default_dialog_blur() -> f64 {
-    0.0
+    DEFAULT_DIALOG_BLUR
 }
 
 impl Default for ThemeSettings {
@@ -62,7 +66,7 @@ impl Default for ThemeSettings {
 }
 
 fn settings_file(app: &AppHandle) -> Result<std::path::PathBuf, String> {
-    Ok(ensure_config_dir(app)?.join("settings.json"))
+    Ok(ensure_config_dir(app)?.join(SETTINGS_FILE))
 }
 
 #[tauri::command]
@@ -71,16 +75,17 @@ pub fn load_theme_settings(app: AppHandle) -> Result<ThemeSettings, String> {
     if !p.exists() {
         return Ok(ThemeSettings::default());
     }
-    let content = fs::read_to_string(&p).map_err(|e| format!("读取 settings.json 失败: {}", e))?;
+    let content = fs::read_to_string(&p)
+        .map_err(|e| format!("读取 {} 失败: {}", SETTINGS_FILE, e))?;
     // 容忍 BOM；损坏时回退默认而不是让界面崩掉
-    Ok(serde_json::from_str(content.trim_start_matches('\u{feff}')).unwrap_or_default())
+    Ok(serde_json::from_str(strip_bom(&content)).unwrap_or_default())
 }
 
 #[tauri::command]
 pub fn save_theme_settings(app: AppHandle, settings: ThemeSettings) -> Result<(), String> {
-    let opacity = settings.opacity.clamp(0.0, 1.0);
-    let dialog_opacity = settings.dialog_opacity.clamp(0.0, 1.0);
-    let dialog_blur = settings.dialog_blur.clamp(0.0, 60.0);
+    let opacity = settings.opacity.clamp(OPACITY_MIN, OPACITY_MAX);
+    let dialog_opacity = settings.dialog_opacity.clamp(OPACITY_MIN, OPACITY_MAX);
+    let dialog_blur = settings.dialog_blur.clamp(OPACITY_MIN, DIALOG_BLUR_MAX);
     let fixed = ThemeSettings {
         opacity,
         dialog_opacity,
@@ -88,5 +93,6 @@ pub fn save_theme_settings(app: AppHandle, settings: ThemeSettings) -> Result<()
         ..settings
     };
     let json = serde_json::to_string_pretty(&fixed).map_err(|e| e.to_string())?;
-    fs::write(settings_file(&app)?, json).map_err(|e| format!("写入 settings.json 失败: {}", e))
+    fs::write(settings_file(&app)?, json)
+        .map_err(|e| format!("写入 {} 失败: {}", SETTINGS_FILE, e))
 }

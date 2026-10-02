@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import type { Tool } from '../../types';
 import { launchTool, openPath, stopTool } from '../../api/launcher';
 import { useToolsStore } from '../../stores/tools';
+import { TOOL_TYPES } from '../../constants';
 import DocDialog from './DocDialog.vue';
 import ExeToolEditDialog from './ExeToolEditDialog.vue';
 
@@ -57,7 +58,7 @@ async function openDir() {
       <div class="title" :title="tool.title">{{ tool.title }}</div>
       <div class="header-right">
         <button class="edit-btn" title="编辑标题/副标题" @click="showEdit = true">✎</button>
-        <button v-if="tool.type === 'exe'" class="remove-btn" title="从列表移除" @click="remove">✕</button>
+        <button v-if="tool.type === TOOL_TYPES.EXE" class="remove-btn" title="从列表移除" @click="remove">✕</button>
         <div class="type-tag">{{ tool.type.toUpperCase() }}</div>
       </div>
     </div>
@@ -65,7 +66,7 @@ async function openDir() {
     <div class="actions">
       <button class="btn" :disabled="!tool.docPath" @click="openDoc">使用文档</button>
       <button class="btn primary" @click="openCmd">
-        {{ tool.type === 'exe' ? '启动工具' : '命令窗口' }}
+        {{ tool.type === TOOL_TYPES.EXE ? '启动工具' : '命令窗口' }}
       </button>
       <button v-if="tool.stopPath" class="btn danger" title="执行关闭脚本停止服务" @click="stop">
         关闭工具

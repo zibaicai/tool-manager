@@ -1,4 +1,5 @@
 use crate::commands::{config::ensure_config_dir, launcher, scanner};
+use crate::constants::{strip_bom, EXE_TOOLS_FILE, ICON_FILE, OPS_FILE, README_FILE, TOOL_EXE};
 use crate::models::Tool;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -40,20 +41,21 @@ pub struct ExeToolConfig {
 }
 
 fn config_file(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(ensure_config_dir(app)?.join("exe-tools.json"))
+    Ok(ensure_config_dir(app)?.join(EXE_TOOLS_FILE))
 }
 
 fn load_config(app: &AppHandle) -> Result<ExeToolConfig, String> {
     let cfg = fs::read_to_string(config_file(app)?)
-        .map_err(|e| format!("读取 exe-tools.json 失败: {}", e))?;
+        .map_err(|e| format!("读取 {} 失败: {}", EXE_TOOLS_FILE, e))?;
     // 容忍 UTF-8 BOM（部分编辑器/PowerShell 保存时会附加）
-    serde_json::from_str(cfg.trim_start_matches('\u{feff}'))
-        .map_err(|e| format!("exe-tools.json 解析失败: {}", e))
+    serde_json::from_str(strip_bom(&cfg))
+        .map_err(|e| format!("{} 解析失败: {}", EXE_TOOLS_FILE, e))
 }
 
 fn save_config(app: &AppHandle, cfg: &ExeToolConfig) -> Result<(), String> {
     let json = serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?;
-    fs::write(config_file(app)?, json).map_err(|e| format!("写入 exe-tools.json 失败: {}", e))
+    fs::write(config_file(app)?, json)
+        .map_err(|e| format!("写入 {} 失败: {}", EXE_TOOLS_FILE, e))
 }
 
 /// 把录入记录补全为展示用 Tool：
@@ -63,7 +65,7 @@ fn enrich(entry: &ExeToolEntry) -> Tool {
     let exe = Path::new(&entry.exe_path);
     let dir = exe.parent().unwrap_or_else(|| Path::new("."));
 
-    let readme = dir.join("README.md");
+    let readme = dir.join(README_FILE);
     let fallback = exe
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
@@ -75,19 +77,19 @@ fn enrich(entry: &ExeToolEntry) -> Tool {
         _ => fallback,
     };
 
-    let ops = dir.join("Ops.md");
+    let ops = dir.join(OPS_FILE);
     let doc_path = ops
         .exists()
         .then(|| ops.to_string_lossy().to_string());
 
-    let icon_file = dir.join("icon.png");
+    let icon_file = dir.join(ICON_FILE);
     let icon = icon_file
         .exists()
         .then(|| icon_file.to_string_lossy().to_string());
 
     Tool {
         id: entry.id.clone(),
-        tool_type: "exe".into(),
+        tool_type: TOOL_EXE.into(),
         title,
         path: entry.exe_path.clone(),
         doc_path,

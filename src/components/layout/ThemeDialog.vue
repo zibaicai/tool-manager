@@ -1,18 +1,27 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount } from 'vue';
 import { useSettingsStore, BUILTIN_BGS, bgUrl } from '../../stores/settings';
+import {
+  BUILTIN_BG_PREFIX,
+  DIALOG_BLUR_SLIDER_MAX,
+  OPACITY_MAX,
+  OPACITY_MIN,
+  THEME_MODES,
+} from '../../constants';
 
 const emit = defineEmits<{ close: [] }>();
 const settings = useSettingsStore();
 
 const modes = [
-  { value: 'default', label: '默认', tip: '保持原样' },
-  { value: 'light', label: '浅色主题', tip: '浅底深字' },
-  { value: 'dark', label: '深色主题', tip: '深底浅字' },
+  { value: THEME_MODES.DEFAULT, label: '默认', tip: '保持原样' },
+  { value: THEME_MODES.LIGHT, label: '浅色主题', tip: '浅底深字' },
+  { value: THEME_MODES.DARK, label: '深色主题', tip: '深底浅字' },
 ] as const;
 
 const builtinList = computed(() =>
-  settings.mode === 'default' ? [] : BUILTIN_BGS[settings.mode].map((n) => `builtin:${n}`),
+  settings.mode === THEME_MODES.DEFAULT
+    ? []
+    : BUILTIN_BGS[settings.mode].map((n) => `${BUILTIN_BG_PREFIX}${n}`),
 );
 const customList = computed(() =>
   settings.customBgs.filter((c) => c.theme === settings.mode).map((c) => c.path),
@@ -63,8 +72,8 @@ onBeforeUnmount(() => {
           <input
             class="opacity-slider"
             type="range"
-            min="0.3"
-            max="1"
+            :min="0.3"
+            :max="OPACITY_MAX"
             step="0.05"
             :value="settings.dialogOpacity"
             @input="settings.setDialogOpacity(Number(($event.target as HTMLInputElement).value))"
@@ -76,8 +85,8 @@ onBeforeUnmount(() => {
           <input
             class="opacity-slider"
             type="range"
-            min="0"
-            max="30"
+            :min="0"
+            :max="DIALOG_BLUR_SLIDER_MAX"
             step="1"
             :value="settings.dialogBlur"
             @input="settings.setDialogBlur(Number(($event.target as HTMLInputElement).value))"
@@ -91,15 +100,17 @@ onBeforeUnmount(() => {
             <input
               class="opacity-slider"
               type="range"
-              min="0"
-              max="1"
+              :min="OPACITY_MIN"
+              :max="OPACITY_MAX"
               step="0.05"
               :value="settings.opacity"
               @input="settings.setOpacity(Number(($event.target as HTMLInputElement).value))"
             />
             <p class="hint">按钮自动 = 页面+25%，卡片与目录 = 页面+15%（不超过 100%）</p>
 
-            <label class="field-label">背景图片（{{ settings.mode === 'light' ? '浅色' : '深色' }}类）</label>
+            <label class="field-label">
+              背景图片（{{ settings.mode === THEME_MODES.LIGHT ? '浅色' : '深色' }}类）
+            </label>
             <div class="bg-grid">
               <div
                 v-for="b in builtinList"

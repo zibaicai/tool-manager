@@ -1,4 +1,7 @@
 use crate::commands::config::ensure_config_dir;
+use crate::constants::{
+    strip_bom, CAT_SCAN, CMD_TOOLS_FILE, ICON_FILE, OPS_FILE, README_FILE, TOOL_CMD,
+};
 use crate::models::{Category, MenuConfig, Tool};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -39,19 +42,20 @@ pub struct CmdToolOverrides {
 }
 
 fn overrides_file(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(ensure_config_dir(app)?.join("cmd-tools.json"))
+    Ok(ensure_config_dir(app)?.join(CMD_TOOLS_FILE))
 }
 
 fn load_overrides(app: &AppHandle) -> CmdToolOverrides {
     fs::read_to_string(overrides_file(app).unwrap_or_default())
         .ok()
-        .and_then(|c| serde_json::from_str(c.trim_start_matches('\u{feff}')).ok())
+        .and_then(|c| serde_json::from_str(strip_bom(&c)).ok())
         .unwrap_or_default()
 }
 
 fn save_overrides(app: &AppHandle, o: &CmdToolOverrides) -> Result<(), String> {
     let json = serde_json::to_string_pretty(o).map_err(|e| e.to_string())?;
-    fs::write(overrides_file(app)?, json).map_err(|e| format!("写入 cmd-tools.json 失败: {}", e))
+    fs::write(overrides_file(app)?, json)
+        .map_err(|e| format!("写入 {} 失败: {}", CMD_TOOLS_FILE, e))
 }
 
 /// 把自定义覆盖应用到扫描出的工具上
@@ -131,7 +135,7 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
         .unwrap_or_default();
 
     // 标题：优先 README.md 的 H1，否则用目录名
-    let readme = dir.join("README.md");
+    let readme = dir.join(README_FILE);
     let title = if readme.exists() {
         extract_h1(&readme).unwrap_or(dir_name.clone())
     } else {
@@ -139,7 +143,7 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
     };
 
     // 文档：Ops.md
-    let ops = dir.join("Ops.md");
+    let ops = dir.join(OPS_FILE);
     let doc_path = if ops.exists() {
         Some(ops.to_string_lossy().to_string())
     } else {
@@ -147,7 +151,7 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
     };
 
     // 图标：icon.png
-    let icon_file = dir.join("icon.png");
+    let icon_file = dir.join(ICON_FILE);
     let icon = if icon_file.exists() {
         Some(icon_file.to_string_lossy().to_string())
     } else {
@@ -157,7 +161,7 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
     let path_str = dir.to_string_lossy().to_string();
     Some(Tool {
         id: make_id(&stable_key(dir, roots)),
-        tool_type: "cmd".into(),
+        tool_type: TOOL_CMD.into(),
         title,
         path: path_str,
         doc_path,
@@ -370,7 +374,7 @@ fn effective_root(cat: &Category, menu: &MenuConfig) -> Option<String> {
 fn collect_claimed(menu: &MenuConfig, overrides: &CmdToolOverrides) -> HashSet<String> {
     let mut claimed: HashSet<String> = HashSet::new();
     for c in &menu.categories {
-        if c.category_type == "scan" {
+        if c.category_type == CAT_SCAN {
             for d in &c.dirs {
                 claimed.insert(d.trim().trim_end_matches(['\\', '/']).to_lowercase());
             }
@@ -481,12 +485,12 @@ fn scan_all(menu: &MenuConfig, overrides: &CmdToolOverrides) -> Vec<Tool> {
     let first_scan_id = menu
         .categories
         .iter()
-        .find(|c| c.category_type == "scan")
+        .find(|c| c.category_type == CAT_SCAN)
         .map(|c| c.id.clone());
 
     let mut all = Vec::new();
     for cat in &menu.categories {
-        if cat.category_type != "scan" {
+        if cat.category_type != CAT_SCAN {
             continue;
         }
         let is_first = first_scan_id.as_deref() == Some(cat.id.as_str());
@@ -534,7 +538,7 @@ pub fn assign_cmd_tool(
                 .iter()
                 .find(|c| &c.id == cid)
                 .ok_or("未找到目标目录")?;
-            if cat.category_type != "scan" {
+            if cat.category_type != CAT_SCAN {
                 return Err("目标目录不是 CMD 自动扫描类型".into());
             }
             let root = effective_root(cat, &menu).ok_or("目标目录未配置扫描根路径")?;
@@ -634,7 +638,7 @@ mod tests {
             categories: vec![Category {
                 id: "c1".into(),
                 name: "测试目录".into(),
-                category_type: "scan".into(),
+                category_type: CAT_SCAN.into(),
                 scan_path: None,
                 dirs: vec![],
                 weight: 0,
@@ -647,7 +651,7 @@ mod tests {
         Category {
             id: id.into(),
             name: id.into(),
-            category_type: "scan".into(),
+            category_type: CAT_SCAN.into(),
             scan_path: scan_path.map(|s| s.to_string()),
             dirs: dirs.iter().map(|s| s.to_string()).collect(),
             weight: 0,

@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Tool } from '../types';
+import { TOOL_TYPES } from '../constants';
 
 /**
  * 启动工具：
@@ -20,10 +21,10 @@ export function openPath(path: string): Promise<void> {
   return invoke('open_path', { path });
 }
 
-/** 执行关闭脚本（.bat）：与启动同一套逻辑（可见 cmd 窗口 / UAC 提权） */
+/** 执行关闭脚本（.bat/.cmd）：与启动同一套逻辑（可见 cmd 窗口 / UAC 提权） */
 export function stopTool(tool: Tool): Promise<void> {
   return invoke('launch_tool', {
-    toolType: 'exe',
+    toolType: TOOL_TYPES.EXE,
     path: tool.stopPath,
     args: null,
     admin: tool.admin ?? false,

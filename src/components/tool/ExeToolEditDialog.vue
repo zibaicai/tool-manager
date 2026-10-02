@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import type { Tool } from '../../types';
 import { useToolsStore } from '../../stores/tools';
+import { CATEGORY_TYPES, TOOL_TYPES } from '../../constants';
 
 const props = defineProps<{ tool: Tool }>();
 const emit = defineEmits<{ close: [] }>();
@@ -12,7 +13,9 @@ const desc = ref(props.tool.desc ?? '');
 const admin = ref(props.tool.admin ?? false);
 const stopPath = ref(props.tool.stopPath ?? '');
 const assignedCat = ref(props.tool.categoryId);
-const scanCats = computed(() => store.sortedCategories.filter((c) => c.type === 'scan'));
+const scanCats = computed(() =>
+  store.sortedCategories.filter((c) => c.type === CATEGORY_TYPES.SCAN),
+);
 const error = ref('');
 const submitting = ref(false);
 
@@ -34,7 +37,7 @@ async function submit() {
   error.value = '';
   submitting.value = true;
   try {
-    if (props.tool.type === 'exe') {
+    if (props.tool.type === TOOL_TYPES.EXE) {
       await store.updateExe(props.tool.id, title.value, desc.value, admin.value, stopPath.value);
     } else {
       await store.updateCmd(props.tool.id, title.value, desc.value);
@@ -78,12 +81,12 @@ async function submit() {
             @keyup.enter="submit"
           />
 
-          <label v-if="tool.type === 'exe'" class="check-row">
+          <label v-if="tool.type === TOOL_TYPES.EXE" class="check-row">
             <input v-model="admin" type="checkbox" />
             <span>以管理员身份运行（启动时弹出 UAC 授权）</span>
           </label>
 
-          <template v-if="tool.type === 'exe'">
+          <template v-if="tool.type === TOOL_TYPES.EXE">
             <label class="field-label">关闭脚本 · .bat / .cmd（可选）</label>
             <input
               v-model="stopPath"
@@ -93,7 +96,7 @@ async function submit() {
             />
           </template>
 
-          <template v-if="tool.type === 'cmd'">
+          <template v-if="tool.type === TOOL_TYPES.CMD">
             <label class="field-label">所属目录</label>
             <select v-model="assignedCat" class="text-input">
               <option value="">自动（按目录扫描规则）</option>

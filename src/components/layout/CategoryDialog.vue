@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useToolsStore } from '../../stores/tools';
+import { CATEGORY_TYPES, DEFAULT_WEIGHT, type CategoryType } from '../../constants';
 
 const props = defineProps<{ mode: 'add' | 'rename' }>();
 const emit = defineEmits<{ close: [] }>();
@@ -8,8 +9,10 @@ const store = useToolsStore();
 
 const activeCat = store.categories.find((c) => c.id === store.activeCategoryId);
 const name = ref(props.mode === 'rename' ? (activeCat?.name ?? '') : '');
-const catType = ref<'scan' | 'manual'>('manual');
-const weight = ref<number>(props.mode === 'rename' ? (activeCat?.weight ?? 0) : 0);
+const catType = ref<CategoryType>(CATEGORY_TYPES.MANUAL);
+const weight = ref<number>(
+  props.mode === 'rename' ? (activeCat?.weight ?? DEFAULT_WEIGHT) : DEFAULT_WEIGHT,
+);
 const error = ref('');
 const submitting = ref(false);
 
@@ -29,7 +32,7 @@ onBeforeUnmount(() => {
 
 async function submit() {
   error.value = '';
-  const w = Number.isFinite(weight.value) ? (weight.value as number) : 0;
+  const w = Number.isFinite(weight.value) ? (weight.value as number) : DEFAULT_WEIGHT;
   submitting.value = true;
   try {
     if (props.mode === 'add') {
@@ -79,8 +82,8 @@ async function submit() {
           <template v-if="mode === 'add'">
             <label class="field-label">目录类型</label>
             <select v-model="catType" class="text-input">
-              <option value="manual">EXE 手动录入</option>
-              <option value="scan">CMD 自动扫描（扫描 scanRoot 汇总目录）</option>
+              <option :value="CATEGORY_TYPES.MANUAL">EXE 手动录入</option>
+              <option :value="CATEGORY_TYPES.SCAN">CMD 自动扫描（扫描 scanRoot 汇总目录）</option>
             </select>
             <p class="hint">新建的 CMD 目录初始为空，请在工具卡片的编辑菜单中通过「所属目录」分配工具</p>
           </template>

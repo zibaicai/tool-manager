@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import type { Tool } from '../types';
+import { PROGRAM_EXTENSIONS } from '../constants';
 
 export function loadExeTools(): Promise<Tool[]> {
   return invoke('load_exe_tools');
@@ -49,7 +50,7 @@ export function removeExeTool(id: string): Promise<void> {
 export async function pickExe(): Promise<string | null> {
   const selected = await open({
     multiple: false,
-    filters: [{ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] }],
+    filters: [{ name: '可执行文件', extensions: [...PROGRAM_EXTENSIONS] }],
   });
   return typeof selected === 'string' ? selected : null;
 }

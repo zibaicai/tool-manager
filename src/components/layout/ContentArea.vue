@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useToolsStore } from '../../stores/tools';
+import { CATEGORY_TYPES } from '../../constants';
 import ToolGrid from '../tool/ToolGrid.vue';
 import ExeToolForm from '../tool/ExeToolForm.vue';
 
@@ -10,7 +11,7 @@ const showForm = ref(false);
 const activeCategory = computed(() =>
   store.categories.find((c) => c.id === store.activeCategoryId),
 );
-const isManual = computed(() => activeCategory.value?.type === 'manual');
+const isManual = computed(() => activeCategory.value?.type === CATEGORY_TYPES.MANUAL);
 </script>
 
 <template>

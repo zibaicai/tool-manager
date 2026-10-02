@@ -1,3 +1,4 @@
+use crate::constants::{TOOL_CMD, TOOL_EXE};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::AppHandle;
@@ -26,8 +27,8 @@ pub fn launch_tool(
     admin: Option<bool>,
 ) -> Result<(), String> {
     match tool_type.as_str() {
-        "cmd" => open_cmd_window(&path),
-        "exe" => launch_exe(&path, args.as_deref(), admin.unwrap_or(false)),
+        TOOL_CMD => open_cmd_window(&path),
+        TOOL_EXE => launch_exe(&path, args.as_deref(), admin.unwrap_or(false)),
         other => Err(format!("未知工具类型: {}", other)),
     }
 }

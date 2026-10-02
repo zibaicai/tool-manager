@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Category, MenuConfig } from '../types';
+import type { CategoryType } from '../constants';
 
 export function loadMenuConfig(): Promise<MenuConfig> {
   return invoke('load_menu_config');
@@ -8,7 +9,7 @@ export function loadMenuConfig(): Promise<MenuConfig> {
 /** 新增目录（分类）：scan=自动扫描，manual=EXE 手动录入；weight 为排序权重（越大越靠前） */
 export function addCategory(
   name: string,
-  categoryType: 'scan' | 'manual',
+  categoryType: CategoryType,
   weight: number,
 ): Promise<Category> {
   return invoke('add_category', { name, categoryType, weight });

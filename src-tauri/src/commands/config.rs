@@ -1,4 +1,8 @@
 use crate::commands::scanner;
+use crate::constants::{
+    strip_bom, CAT_MANUAL, CAT_SCAN, CATEGORY_ID_PREFIX, CONFIG_DIR, DEFAULT_WEIGHT,
+    EXE_TOOLS_FILE, MENU_FILE,
+};
 use crate::models::{Category, MenuConfig};
 use std::fs;
 use std::path::PathBuf;
@@ -21,8 +25,8 @@ const DEFAULT_EXE_TOOLS_JSON: &str = r#"{
 fn find_tree_config_dir() -> Option<PathBuf> {
     let mut dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
     for _ in 0..8 {
-        if dir.join("config").join("menu.json").exists() {
-            return Some(dir.join("config"));
+        if dir.join(CONFIG_DIR).join(MENU_FILE).exists() {
+            return Some(dir.join(CONFIG_DIR));
         }
         if !dir.pop() {
             break;
@@ -44,8 +48,8 @@ pub(crate) fn ensure_config_dir(app: &AppHandle) -> Result<PathBuf, String> {
         .ok()
         .and_then(|p| p.parent().map(|d| d.to_path_buf()))
     {
-        let portable = exe_dir.join("config");
-        if portable.join("menu.json").exists() {
+        let portable = exe_dir.join(CONFIG_DIR);
+        if portable.join(MENU_FILE).exists() {
             return Ok(portable);
         }
     }
@@ -63,29 +67,29 @@ pub(crate) fn ensure_config_dir(app: &AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| format!("获取配置目录失败: {}", e))?;
     fs::create_dir_all(&dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
 
-    let menu_path = dir.join("menu.json");
+    let menu_path = dir.join(MENU_FILE);
     if !menu_path.exists() {
         // 首次运行：优先从项目树 config/ 迁移
         let mut migrated = false;
         if let Some(src) = find_tree_config_dir() {
-            if fs::copy(src.join("menu.json"), &menu_path).is_ok() {
+            if fs::copy(src.join(MENU_FILE), &menu_path).is_ok() {
                 migrated = true;
-                let exe_src = src.join("exe-tools.json");
+                let exe_src = src.join(EXE_TOOLS_FILE);
                 if exe_src.exists() {
-                    let _ = fs::copy(exe_src, dir.join("exe-tools.json"));
+                    let _ = fs::copy(exe_src, dir.join(EXE_TOOLS_FILE));
                 }
             }
         }
         if !migrated {
             fs::write(&menu_path, DEFAULT_MENU_JSON)
-                .map_err(|e| format!("初始化 menu.json 失败: {}", e))?;
+                .map_err(|e| format!("初始化 {} 失败: {}", MENU_FILE, e))?;
         }
     }
 
-    let exe_tools_path = dir.join("exe-tools.json");
+    let exe_tools_path = dir.join(EXE_TOOLS_FILE);
     if !exe_tools_path.exists() {
         fs::write(&exe_tools_path, DEFAULT_EXE_TOOLS_JSON)
-            .map_err(|e| format!("初始化 exe-tools.json 失败: {}", e))?;
+            .map_err(|e| format!("初始化 {} 失败: {}", EXE_TOOLS_FILE, e))?;
     }
 
     Ok(dir)
@@ -97,18 +101,18 @@ pub fn load_menu_config(app: AppHandle) -> Result<MenuConfig, String> {
 }
 
 fn load_menu(app: &AppHandle) -> Result<MenuConfig, String> {
-    let p = ensure_config_dir(app)?.join("menu.json");
+    let p = ensure_config_dir(app)?.join(MENU_FILE);
     let content = fs::read_to_string(&p)
-        .map_err(|e| format!("读取 menu.json 失败: {} ({})", e, p.display()))?;
+        .map_err(|e| format!("读取 {} 失败: {} ({})", MENU_FILE, e, p.display()))?;
     // 容忍 UTF-8 BOM（部分编辑器/PowerShell 保存时会附加）
-    serde_json::from_str(content.trim_start_matches('\u{feff}'))
-        .map_err(|e| format!("menu.json 解析失败: {}", e))
+    serde_json::from_str(strip_bom(&content))
+        .map_err(|e| format!("{} 解析失败: {}", MENU_FILE, e))
 }
 
 fn save_menu(app: &AppHandle, cfg: &MenuConfig) -> Result<(), String> {
-    let p = ensure_config_dir(app)?.join("menu.json");
+    let p = ensure_config_dir(app)?.join(MENU_FILE);
     let json = serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?;
-    fs::write(&p, json).map_err(|e| format!("写入 menu.json 失败: {}", e))
+    fs::write(&p, json).map_err(|e| format!("写入 {} 失败: {}", MENU_FILE, e))
 }
 
 /// 新增目录（分类）。category_type 为 scan（自动扫描）或 manual（EXE 手动录入）；
@@ -124,7 +128,7 @@ pub fn add_category(
     if name.is_empty() {
         return Err("请填写目录名称".into());
     }
-    if category_type != "scan" && category_type != "manual" {
+    if category_type != CAT_SCAN && category_type != CAT_MANUAL {
         return Err("目录类型需为 scan 或 manual".into());
     }
     let mut cfg = load_menu(&app)?;
@@ -136,12 +140,12 @@ pub fn add_category(
         .map(|d| d.as_millis())
         .unwrap_or(0);
     let cat = Category {
-        id: format!("cat-{}", scanner::make_id(&format!("{}-{}", name, millis))),
+        id: format!("{}{}", CATEGORY_ID_PREFIX, scanner::make_id(&format!("{}-{}", name, millis))),
         name,
         category_type,
         scan_path: None,
         dirs: vec![],
-        weight: weight.unwrap_or(0),
+        weight: weight.unwrap_or(DEFAULT_WEIGHT),
     };
     cfg.categories.push(cat.clone());
     save_menu(&app, &cfg)?;
