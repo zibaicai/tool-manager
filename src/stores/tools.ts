@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Category, Tool } from '../types';
-import { addCategory, deleteCategory, loadMenuConfig, renameCategory } from '../api/config';
+import { addCategory, deleteCategory, loadMenuConfig, renameCategory, setScanRoot } from '../api/config';
 import { scanCmdTools, updateCmdTool, assignCmdTool } from '../api/fs';
 import { addExeTool, loadExeTools, removeExeTool, updateExeTool } from '../api/exe';
 
@@ -137,16 +137,26 @@ export const useToolsStore = defineStore('tools', () => {
     activeCategoryId.value = id;
   }
 
+  /** 保存扫描根目录并按新路径重新扫描工具列表 */
+  async function saveScanRoot(path: string): Promise<void> {
+    const trimmed = path.trim();
+    await setScanRoot(trimmed);
+    scanRoot.value = trimmed;
+    await reloadAll();
+  }
+
   return {
     categories,
     tools,
     activeCategoryId,
     activeTools,
+    scanRoot,
     loading,
     error,
     init,
     refresh,
     reloadAll,
+    saveScanRoot,
     addExe,
     updateExe,
     updateCmd,

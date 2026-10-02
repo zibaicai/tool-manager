@@ -137,6 +137,7 @@ pub fn run() {
             config::add_category,
             config::rename_category,
             config::delete_category,
+            config::set_scan_root,
             settings::load_theme_settings,
             settings::save_theme_settings,
             exetools::load_exe_tools,

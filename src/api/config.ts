@@ -19,3 +19,9 @@ export function renameCategory(id: string, name: string): Promise<void> {
 export function deleteCategory(id: string): Promise<void> {
   return invoke('delete_category', { id });
 }
+
+/** 设置 CMD 工具统一扫描根目录（scanRoot）；传空串表示清除 */
+export function setScanRoot(path: string): Promise<void> {
+  const trimmed = path.trim();
+  return invoke('set_scan_root', { path: trimmed || null });
+}

@@ -158,6 +158,17 @@ pub fn rename_category(app: AppHandle, id: String, name: String) -> Result<(), S
     save_menu(&app, &cfg)
 }
 
+/// 设置顶层 CMD 工具扫描根目录（scanRoot）。
+/// 传 None 或空串/纯空白表示清除；保存时不校验目录是否存在，避免拦截尚未挂载的盘
+#[tauri::command]
+pub fn set_scan_root(app: AppHandle, path: Option<String>) -> Result<(), String> {
+    let mut cfg = load_menu(&app)?;
+    cfg.scan_root = path
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty());
+    save_menu(&app, &cfg)
+}
+
 /// 删除目录。其下 EXE 录入会变为无分类数据（保留在 exe-tools.json，重新建同 id 目录可恢复）
 #[tauri::command]
 pub fn delete_category(app: AppHandle, id: String) -> Result<(), String> {
