@@ -1,12 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Tool } from '../types';
 
-export function scanCmdTools(
-  path: string,
-  categoryId: string,
-  dirs?: string[],
-): Promise<Tool[]> {
-  return invoke('scan_cmd_tools', { path, categoryId, dirs: dirs ?? null });
+/** 一次性扫描全部 CMD 工具分类（生效扫描根由后端按菜单统一解析，前端不再逐分类调用） */
+export function scanAllCmdTools(): Promise<Tool[]> {
+  return invoke('scan_all_cmd_tools');
 }
 
 export function readTextFile(path: string): Promise<string> {

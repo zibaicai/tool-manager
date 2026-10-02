@@ -45,11 +45,11 @@ export function removeExeTool(id: string): Promise<void> {
   return invoke('remove_exe_tool', { id });
 }
 
-/** 弹出系统文件选择框，返回所选 exe/bat 的绝对路径（取消时返回 null） */
+/** 弹出系统文件选择框，返回所选 exe/bat/cmd 的绝对路径（取消时返回 null） */
 export async function pickExe(): Promise<string | null> {
   const selected = await open({
     multiple: false,
-    filters: [{ name: '可执行文件', extensions: ['exe', 'bat'] }],
+    filters: [{ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] }],
   });
   return typeof selected === 'string' ? selected : null;
 }

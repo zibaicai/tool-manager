@@ -3,6 +3,21 @@ use std::process::Command;
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 
+/// 脚本类可执行文件扩展名：无 PE 头、经 cmd 解释执行；
+/// 既是允许录入/启动的脚本，也是合法的关闭脚本（扩展名规则的唯一来源）
+pub const SCRIPT_EXTENSIONS: &[&str] = &["bat", "cmd"];
+
+/// 允许录入/启动的可执行文件扩展名 = PE 程序（exe）+ 脚本（bat/cmd）
+pub const PROGRAM_EXTENSIONS: &[&str] = &["exe", "bat", "cmd"];
+
+/// 判断路径扩展名（忽略大小写）是否在给定白名单内
+pub fn has_extension_in(path: &Path, exts: &[&str]) -> bool {
+    path.extension()
+        .and_then(|s| s.to_str())
+        .map(|s| exts.iter().any(|e| s.eq_ignore_ascii_case(e)))
+        .unwrap_or(false)
+}
+
 #[tauri::command]
 pub fn launch_tool(
     tool_type: String,
@@ -94,12 +109,8 @@ fn launch_exe(exe_path: &str, args: Option<&str>, admin: bool) -> Result<(), Str
     };
 
     let extra = args.filter(|s| !s.trim().is_empty());
-    // .bat/.cmd 脚本没有 PE 头，直接按控制台程序处理（经 cmd 解释执行）
-    let is_script = p
-        .extension()
-        .and_then(|s| s.to_str())
-        .map(|s| s.eq_ignore_ascii_case("bat") || s.eq_ignore_ascii_case("cmd"))
-        .unwrap_or(false);
+    // bat/cmd 脚本没有 PE 头，直接按控制台程序处理（经 cmd 解释执行）
+    let is_script = has_extension_in(p, SCRIPT_EXTENSIONS);
     let console = is_script || is_console_exe(p);
 
     // 管理员启动：经 ShellExecuteEx 的 "runas" 谓词触发 UAC

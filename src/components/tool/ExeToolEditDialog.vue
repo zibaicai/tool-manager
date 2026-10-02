@@ -84,7 +84,7 @@ async function submit() {
           </label>
 
           <template v-if="tool.type === 'exe'">
-            <label class="field-label">关闭脚本 · .bat（可选）</label>
+            <label class="field-label">关闭脚本 · .bat / .cmd（可选）</label>
             <input
               v-model="stopPath"
               class="text-input"

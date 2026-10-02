@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Category, Tool } from '../types';
 import { addCategory, deleteCategory, loadMenuConfig, renameCategory, setScanRoot } from '../api/config';
-import { scanCmdTools, updateCmdTool, assignCmdTool } from '../api/fs';
+import { scanAllCmdTools, updateCmdTool, assignCmdTool } from '../api/fs';
 import { addExeTool, loadExeTools, removeExeTool, updateExeTool } from '../api/exe';
 
 export const useToolsStore = defineStore('tools', () => {
@@ -46,27 +46,20 @@ export const useToolsStore = defineStore('tools', () => {
     }
   }
 
+  /** 加载全部工具：CMD 扫描与 EXE 录入各一次后端调用，并行执行。
+   *  生效扫描根（分类 scanPath → 顶层 scanRoot 的回退）只由后端解析，前端不再重复计算 */
   async function reloadAll() {
-    const all: Tool[] = [];
-    for (const cat of categories.value) {
-      const root = cat.scanPath || scanRoot.value;
-      if (cat.type === 'scan' && root) {
-        try {
-          const list = await scanCmdTools(root, cat.id, cat.dirs);
-          all.push(...list);
-        } catch (e) {
-          console.warn(`扫描分类 ${cat.name} 失败:`, e);
-        }
-      }
-      // manual / system 类型后续阶段补
-    }
-    // EXE 工具为全局手动录入，条目自带 categoryId
-    try {
-      all.push(...(await loadExeTools()));
-    } catch (e) {
-      console.warn('加载 EXE 工具失败:', e);
-    }
-    tools.value = all;
+    const [cmdTools, exeTools] = await Promise.all([
+      scanAllCmdTools().catch((e) => {
+        console.warn('扫描 CMD 工具失败:', e);
+        return [] as Tool[];
+      }),
+      loadExeTools().catch((e) => {
+        console.warn('加载 EXE 工具失败:', e);
+        return [] as Tool[];
+      }),
+    ]);
+    tools.value = [...cmdTools, ...exeTools];
   }
 
   /** 录入 EXE 工具；成功后写入列表 */

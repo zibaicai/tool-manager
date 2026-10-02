@@ -76,12 +76,11 @@ async function submit() {
               class="path-input"
               type="text"
               placeholder='D:\tools\app.exe -c "参数" 或 D:\tools\start-svc.bat'
-              @keyup.enter="submit"
             />
             <button class="browse-btn" @click="browse">浏览...</button>
           </div>
           <p class="hint">
-            支持 .exe 与 .bat（启动服务脚本），可带启动参数，如 D:\Program\Nmap\zenmap\bin\pythonw.exe -c
+            支持 .exe / .bat / .cmd（bat/cmd 为启动服务脚本），可带启动参数，如 D:\Program\Nmap\zenmap\bin\pythonw.exe -c
             "from zenmapGUI.App import run;run()"（路径含空格时可加英文引号）
           </p>
 
@@ -108,7 +107,7 @@ async function submit() {
             <span>以管理员身份运行（启动时弹出 UAC 授权，如 net.exe 启动系统服务）</span>
           </label>
 
-          <label class="field-label">关闭脚本 · .bat（可选）</label>
+          <label class="field-label">关闭脚本 · .bat / .cmd（可选）</label>
           <input
             v-model="stopPath"
             class="path-input"

@@ -129,7 +129,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            scanner::scan_cmd_tools,
+            scanner::scan_all_cmd_tools,
             scanner::update_cmd_tool,
             scanner::assign_cmd_tool,
             scanner::read_text_file,

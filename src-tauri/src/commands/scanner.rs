@@ -1,7 +1,7 @@
 use crate::commands::config::ensure_config_dir;
-use crate::models::{MenuConfig, Tool};
+use crate::models::{Category, MenuConfig, Tool};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
@@ -359,114 +359,108 @@ fn load_overrides_migrated(
     overrides
 }
 
-#[tauri::command]
-pub fn scan_cmd_tools(
-    app: AppHandle,
-    path: String,
-    category_id: String,
-    dirs: Option<Vec<String>>,
-) -> Result<Vec<Tool>, String> {
-    let root = PathBuf::from(&path);
-    if !root.exists() {
-        return Err(format!("扫描目录不存在: {}", path));
-    }
-    if !root.is_dir() {
-        return Err(format!("不是目录: {}", path));
-    }
+/// 分类的生效扫描根：分类自带 scan_path 优先，缺省回退顶层 scanRoot。
+/// 这是"扫描根生效规则"的唯一来源，扫描分配与手动分配校验共用，前端不再重复计算
+fn effective_root(cat: &Category, menu: &MenuConfig) -> Option<String> {
+    cat.scan_path.clone().or_else(|| menu.scan_root.clone())
+}
 
-    // 菜单提前加载：用于 id 稳定 key 计算与旧覆盖迁移
-    let menu = crate::commands::config::load_menu_config(app.clone()).ok();
-    let roots = menu.as_ref().map(collect_roots).unwrap_or_default();
-    let overrides = load_overrides_migrated(&app, menu.as_ref());
-
-    let mut tools = Vec::new();
-
-    // 仅收集 dirs 名单中的一级子目录（按填写顺序展示）。
-    // 空名单表示目录为空，工具通过手动分配（cmd-tools.json）补入，新建目录初始为空。
-    if let Some(names) = dirs {
-        for name in names {
-            if let Some(tool) = inspect_dir(&root.join(name.trim()), &category_id, &roots) {
-                tools.push(tool);
+/// 已被认领的一级目录名（归一化为小写）：所有 scan 分类 dirs 名单的并集，
+/// 加上手动分配到现存目录的工具。孤儿扫描据此排除，全菜单只算一次
+fn collect_claimed(menu: &MenuConfig, overrides: &CmdToolOverrides) -> HashSet<String> {
+    let mut claimed: HashSet<String> = HashSet::new();
+    for c in &menu.categories {
+        if c.category_type == "scan" {
+            for d in &c.dirs {
+                claimed.insert(d.trim().trim_end_matches(['\\', '/']).to_lowercase());
             }
         }
     }
-
-    // 手动分配到其他分类的工具从本分类剔除（目标分类仍存在才剔除，避免删分类后工具消失）
-    tools.retain(|t| {
-        match overrides
-            .tools
-            .get(&t.id)
-            .and_then(|o| o.category_id.as_ref())
-        {
-            Some(cid) if *cid != category_id => !menu
-                .as_ref()
-                .map_or(false, |m| m.categories.iter().any(|c| &c.id == cid)),
-            _ => true,
+    for ov in overrides.tools.values() {
+        if let (Some(cid), Some(dp)) = (&ov.category_id, &ov.dir_path) {
+            if menu.categories.iter().any(|c| &c.id == cid) {
+                if let Some(name) = Path::new(dp).file_name() {
+                    claimed.insert(name.to_string_lossy().to_lowercase());
+                }
+            }
         }
+    }
+    claimed
+}
+
+/// 扫描单个 scan 分类：dirs 名单 → 剔除手动分走的 → 补入手动分来的 →
+/// （仅第一个 scan 分类）顶层 scanRoot 孤儿兜底 → 应用自定义覆盖。
+/// 生效根缺失/不是目录时该分类返回空列表，不影响其他分类
+fn scan_category(
+    menu: &MenuConfig,
+    overrides: &CmdToolOverrides,
+    roots: &[PathBuf],
+    cat: &Category,
+    is_first_scan: bool,
+    claimed: &HashSet<String>,
+) -> Vec<Tool> {
+    let mut tools = Vec::new();
+    let Some(root_str) = effective_root(cat, menu) else {
+        return tools;
+    };
+    let root = PathBuf::from(&root_str);
+    if !root.is_dir() {
+        return tools;
+    }
+
+    // 仅收集 dirs 名单中的一级子目录（按填写顺序展示）。
+    // 空名单表示目录初始为空，工具通过手动分配（cmd-tools.json）补入
+    for name in &cat.dirs {
+        if let Some(tool) = inspect_dir(&root.join(name.trim()), &cat.id, roots) {
+            tools.push(tool);
+        }
+    }
+
+    // 手动分配到其他现存分类的工具从本分类剔除（目标分类已删除时不剔除，避免工具消失）
+    tools.retain(|t| match overrides
+        .tools
+        .get(&t.id)
+        .and_then(|o| o.category_id.as_ref())
+    {
+        Some(cid) if cid != &cat.id => !menu.categories.iter().any(|c| &c.id == cid),
+        _ => true,
     });
 
-    // 手动分配到本分类但未被扫描规则覆盖的工具（如目标分类配了 dirs 名单），按记录的目录路径补入
+    // 手动分配到本分类但未被 dirs 名单覆盖的工具，按记录的目录路径补入
     for (id, ov) in &overrides.tools {
-        if ov.category_id.as_deref() == Some(category_id.as_str())
-            && !tools.iter().any(|t| t.id == *id)
+        if ov.category_id.as_deref() == Some(cat.id.as_str())
+            && !tools.iter().any(|t| &t.id == id)
         {
             if let Some(dp) = &ov.dir_path {
-                if let Some(tool) = inspect_dir(Path::new(dp), &category_id, &roots) {
+                if let Some(tool) = inspect_dir(Path::new(dp), &cat.id, roots) {
                     tools.push(tool);
                 }
             }
         }
     }
 
-    // 兜底：未被任何 CMD 目录取走的孤儿工具，统一挂到第一个 CMD（scan）目录下
-    if let Some(menu) = &menu {
-        let first_scan_id = menu
-            .categories
-            .iter()
-            .find(|c| c.category_type == "scan")
-            .map(|c| c.id.as_str());
-        if first_scan_id == Some(category_id.as_str()) {
-            if let Some(scan_root) = &menu.scan_root {
-                use std::collections::HashSet;
-                // 已认领 = 所有 scan 目录 dirs 名单的并集
-                let mut claimed: HashSet<String> = HashSet::new();
-                for c in &menu.categories {
-                    if c.category_type == "scan" {
-                        for d in &c.dirs {
-                            claimed.insert(d.trim().to_lowercase());
-                        }
+    // 兜底：未被任何 CMD 目录取走的孤儿工具，统一挂到第一个 scan 分类下（枚举顶层 scanRoot）
+    if is_first_scan {
+        if let Some(scan_root) = &menu.scan_root {
+            if let Ok(entries) = fs::read_dir(scan_root) {
+                let mut orphans: Vec<String> = Vec::new();
+                for entry in entries.flatten() {
+                    let p = entry.path();
+                    if !p.is_dir() {
+                        continue;
+                    }
+                    let Some(fname) = p.file_name() else { continue };
+                    let name = fname.to_string_lossy().to_string();
+                    if !claimed.contains(&name.to_lowercase()) {
+                        orphans.push(name);
                     }
                 }
-                // 手动分配到现存目录的工具也算已认领
-                for ov in overrides.tools.values() {
-                    if let (Some(cid), Some(dp)) = (&ov.category_id, &ov.dir_path) {
-                        if menu.categories.iter().any(|c| &c.id == cid) {
-                            if let Some(name) = Path::new(dp).file_name() {
-                                claimed.insert(name.to_string_lossy().to_lowercase());
-                            }
-                        }
-                    }
-                }
-                if let Ok(entries) = fs::read_dir(scan_root) {
-                    let mut orphans: Vec<String> = Vec::new();
-                    for entry in entries.flatten() {
-                        let p = entry.path();
-                        if !p.is_dir() {
-                            continue;
-                        }
-                        let Some(fname) = p.file_name() else { continue };
-                        let name = fname.to_string_lossy().to_string();
-                        if !claimed.contains(&name.to_lowercase()) {
-                            orphans.push(name);
-                        }
-                    }
-                    orphans.sort();
-                    for name in orphans {
-                        let dp = Path::new(scan_root).join(&name);
-                        if let Some(tool) = inspect_dir(&dp, &category_id, &roots) {
-                            if !tools.iter().any(|t| t.id == tool.id) {
-                                tools.push(tool);
-                            }
+                orphans.sort();
+                for name in orphans {
+                    let dp = Path::new(scan_root).join(&name);
+                    if let Some(tool) = inspect_dir(&dp, &cat.id, roots) {
+                        if !tools.iter().any(|t| t.id == tool.id) {
+                            tools.push(tool);
                         }
                     }
                 }
@@ -475,14 +469,51 @@ pub fn scan_cmd_tools(
     }
 
     for t in &mut tools {
-        apply_override(t, &overrides);
+        apply_override(t, overrides);
     }
+    tools
+}
 
-    Ok(tools)
+/// 按菜单扫描全部 scan 分类（纯逻辑，无 IO 配置读取；菜单/覆盖由命令层统一加载一次）
+fn scan_all(menu: &MenuConfig, overrides: &CmdToolOverrides) -> Vec<Tool> {
+    let roots = collect_roots(menu);
+    let claimed = collect_claimed(menu, overrides);
+    let first_scan_id = menu
+        .categories
+        .iter()
+        .find(|c| c.category_type == "scan")
+        .map(|c| c.id.clone());
+
+    let mut all = Vec::new();
+    for cat in &menu.categories {
+        if cat.category_type != "scan" {
+            continue;
+        }
+        let is_first = first_scan_id.as_deref() == Some(cat.id.as_str());
+        all.extend(scan_category(
+            menu,
+            overrides,
+            &roots,
+            cat,
+            is_first,
+            &claimed,
+        ));
+    }
+    all
+}
+
+/// 一次性加载菜单与覆盖（含旧版本迁移），扫描全部 CMD 工具分类。
+/// 替代旧的按分类逐个调用：menu.json / cmd-tools.json 各只读一次，
+/// 生效扫描根完全由后端按 effective_root 规则解析
+#[tauri::command]
+pub fn scan_all_cmd_tools(app: AppHandle) -> Result<Vec<Tool>, String> {
+    let menu = crate::commands::config::load_menu_config(app.clone())?;
+    let overrides = load_overrides_migrated(&app, Some(&menu));
+    Ok(scan_all(&menu, &overrides))
 }
 
 /// 手动分配 CMD 工具到指定目录（分类）。category_id 传 None 表示清除分配、恢复自动归属。
-/// 要求工具目录位于目标分类的扫描根路径下，否则拒绝。
+/// 要求工具目录位于目标分类的生效扫描根路径下，否则拒绝。
 #[tauri::command]
 pub fn assign_cmd_tool(
     app: AppHandle,
@@ -490,15 +521,14 @@ pub fn assign_cmd_tool(
     path: String,
     category_id: Option<String>,
 ) -> Result<Tool, String> {
-    // 先确保旧版本覆盖已迁移到稳定 id（此处 menu 仅用于迁移，业务校验仍单独加载以保留错误信息）
-    let menu_opt = crate::commands::config::load_menu_config(app.clone()).ok();
-    let roots = menu_opt.as_ref().map(collect_roots).unwrap_or_default();
-    let mut overrides = load_overrides_migrated(&app, menu_opt.as_ref());
+    // 菜单与覆盖各加载一次：迁移、目标分类校验、生效根解析共用同一份
+    let menu = crate::commands::config::load_menu_config(app.clone())?;
+    let roots = collect_roots(&menu);
+    let mut overrides = load_overrides_migrated(&app, Some(&menu));
     let mut ov = overrides.tools.get(&id).cloned().unwrap_or_default();
 
     match &category_id {
         Some(cid) => {
-            let menu = crate::commands::config::load_menu_config(app.clone())?;
             let cat = menu
                 .categories
                 .iter()
@@ -507,11 +537,7 @@ pub fn assign_cmd_tool(
             if cat.category_type != "scan" {
                 return Err("目标目录不是 CMD 自动扫描类型".into());
             }
-            let root = cat
-                .scan_path
-                .clone()
-                .or(menu.scan_root.clone())
-                .ok_or("目标目录未配置扫描根路径")?;
+            let root = effective_root(cat, &menu).ok_or("目标目录未配置扫描根路径")?;
             let norm = |p: &str| p.trim_end_matches(['\\', '/']).to_lowercase();
             let parent = Path::new(&path)
                 .parent()
@@ -615,6 +641,130 @@ mod tests {
             }],
             scan_root: Some(root.to_string_lossy().to_string()),
         }
+    }
+
+    fn make_cat(id: &str, dirs: &[&str], scan_path: Option<&str>) -> Category {
+        Category {
+            id: id.into(),
+            name: id.into(),
+            category_type: "scan".into(),
+            scan_path: scan_path.map(|s| s.to_string()),
+            dirs: dirs.iter().map(|s| s.to_string()).collect(),
+            weight: 0,
+        }
+    }
+
+    /// dirs 名单分类拿到名单工具；首个 scan 分类（空名单）兜底拿到全部孤儿（按名排序）
+    #[test]
+    fn scan_all_partitions_listed_and_orphans() {
+        let root = temp_dir("scanall");
+        for d in ["nuclei", "URLFinder", "JSFinder-master"] {
+            fs::create_dir_all(root.join(d)).unwrap();
+        }
+        let menu = MenuConfig {
+            categories: vec![
+                make_cat("empty-first", &[], None),
+                make_cat("listed", &["nuclei"], None),
+            ],
+            scan_root: Some(root.to_string_lossy().to_string()),
+        };
+
+        let tools = scan_all(&menu, &CmdToolOverrides::default());
+        let ids_of = |cid: &str| {
+            tools
+                .iter()
+                .filter(|t| t.category_id == cid)
+                .map(|t| t.id.clone())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(ids_of("listed"), vec![make_id("nuclei")]);
+        // 孤儿按名称排序：JSFinder-master < URLFinder
+        assert_eq!(
+            ids_of("empty-first"),
+            vec![make_id("JSFinder-master"), make_id("URLFinder")]
+        );
+        assert_eq!(tools.len(), 3);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// 手动分配到空名单分类：目标分类补入该工具，原 dirs 分类将其剔除
+    #[test]
+    fn scan_all_assignment_overrides_dir_partition() {
+        let root = temp_dir("assign");
+        fs::create_dir_all(root.join("nuclei")).unwrap();
+        fs::create_dir_all(root.join("URLFinder")).unwrap();
+        let nuclei_abs = root.join("nuclei").to_string_lossy().to_string();
+        let menu = MenuConfig {
+            categories: vec![
+                make_cat("target", &[], None),
+                make_cat("listed", &["nuclei"], None),
+            ],
+            scan_root: Some(root.to_string_lossy().to_string()),
+        };
+        let mut ov = CmdToolOverrides::default();
+        ov.version = OVERRIDES_VERSION;
+        ov.tools.insert(
+            make_id("nuclei"),
+            CmdToolOverride {
+                category_id: Some("target".into()),
+                dir_path: Some(nuclei_abs),
+                ..Default::default()
+            },
+        );
+
+        let tools = scan_all(&menu, &ov);
+        let in_cat = |cid: &str| {
+            tools
+                .iter()
+                .filter(|t| t.category_id == cid)
+                .map(|t| t.id.clone())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(in_cat("target"), vec![make_id("nuclei"), make_id("URLFinder")]);
+        assert!(in_cat("listed").is_empty(), "分走的工具应从名单分类剔除");
+        assert_eq!(tools.len(), 2);
+        assert!(tools.iter().any(|t| t.id == make_id("URLFinder") && t.category_id == "target"));
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// 生效根规则：分类自带 scan_path 优先于顶层 scanRoot；
+    /// 自带根只按 dirs 名单扫描（其下未列入的目录不会成为孤儿，顶层根不存在时兜底静默为空）
+    #[test]
+    fn effective_root_prefers_category_scan_path() {
+        let own = temp_dir("ownroot");
+        fs::create_dir_all(own.join("solo")).unwrap();
+        fs::create_dir_all(own.join("distractor")).unwrap();
+        let menu = MenuConfig {
+            categories: vec![make_cat("c1", &["solo"], Some(own.to_str().unwrap()))],
+            scan_root: Some("Z:\\no-such-root".into()),
+        };
+        let tools = scan_all(&menu, &CmdToolOverrides::default());
+        assert_eq!(tools.len(), 1, "自带根只扫描 dirs 名单，distractor 不出现");
+        assert_eq!(tools[0].id, make_id("solo"));
+        assert_eq!(tools[0].category_id, "c1");
+
+        // 直接验证规则函数
+        let cat = make_cat("c2", &[], None);
+        let mut m2 = menu.clone();
+        m2.categories = vec![cat];
+        assert_eq!(
+            effective_root(&m2.categories[0], &m2).as_deref(),
+            Some("Z:\\no-such-root")
+        );
+
+        let _ = fs::remove_dir_all(&own);
+    }
+
+    /// 未配置任何扫描根时扫描结果为空且不报错
+    #[test]
+    fn scan_all_empty_without_roots() {
+        let menu = MenuConfig {
+            categories: vec![make_cat("c1", &["nuclei"], None)],
+            scan_root: None,
+        };
+        assert!(scan_all(&menu, &CmdToolOverrides::default()).is_empty());
     }
 
     /// 原地升级场景：A 类（带 dir_path）与 B 类（纯标题）均应迁到稳定 id，且迁移幂等

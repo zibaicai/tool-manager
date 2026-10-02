@@ -1,4 +1,4 @@
-use crate::commands::{config::ensure_config_dir, scanner};
+use crate::commands::{config::ensure_config_dir, launcher, scanner};
 use crate::models::Tool;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -104,9 +104,9 @@ fn enrich(entry: &ExeToolEntry) -> Tool {
 /// 把用户输入拆成「exe 路径 + 启动参数」。
 /// 支持两种写法：
 ///   D:\tools\app.exe                      （无参数）
-///   D:\tools\app.exe -c "code"            （裸路径 + 参数，按第一个 .exe/.bat 位置切分）
+///   D:\tools\app.exe -c "code"            （裸路径 + 参数，按第一个可执行扩展名位置切分）
 ///   "D:\my tools\app.exe" -c "code"       （带引号路径 + 参数）
-///   D:\tools\start-svc.bat                （bat 脚本同样支持）
+///   D:\tools\start-svc.bat                （bat/cmd 脚本同样支持）
 fn split_command(input: &str) -> (String, Option<String>) {
     let input = input.trim();
     if let Some(rest) = input.strip_prefix('"') {
@@ -116,15 +116,15 @@ fn split_command(input: &str) -> (String, Option<String>) {
             return (exe, (!args.is_empty()).then(|| args.to_string()));
         }
     }
-    // 裸路径：按第一个 .exe/.bat（忽略大小写，取先出现者）切分，兼容路径含空格的情况
+    // 裸路径：按最先出现的可执行扩展名（忽略大小写）切分，兼容路径含空格的情况
     let lower = input.to_lowercase();
-    let pos = [lower.find(".exe"), lower.find(".bat")]
-        .into_iter()
-        .flatten()
-        .min();
-    match pos {
-        Some(pos) => {
-            let end = pos + 4;
+    let cut = launcher::PROGRAM_EXTENSIONS
+        .iter()
+        .filter_map(|ext| lower.find(&format!(".{ext}")).map(|p| (p, ext.len())))
+        .min_by_key(|(p, _)| *p);
+    match cut {
+        Some((pos, ext_len)) => {
+            let end = pos + 1 + ext_len;
             let exe = input[..end].trim().to_string();
             let args = input[end..].trim();
             (exe, (!args.is_empty()).then(|| args.to_string()))
@@ -163,13 +163,8 @@ pub fn add_exe_tool(
     if !exe.is_file() {
         return Err(format!("文件不存在: {}", exe_path));
     }
-    let ext_ok = exe
-        .extension()
-        .and_then(|s| s.to_str())
-        .map(|s| s.eq_ignore_ascii_case("exe") || s.eq_ignore_ascii_case("bat"))
-        == Some(true);
-    if !ext_ok {
-        return Err("请选择 .exe 或 .bat 文件".into());
+    if !launcher::has_extension_in(exe, launcher::PROGRAM_EXTENSIONS) {
+        return Err("请选择 .exe / .bat / .cmd 文件".into());
     }
 
     let mut cfg = load_config(&app)?;
@@ -200,7 +195,7 @@ pub fn add_exe_tool(
     Ok(enrich(&entry))
 }
 
-/// 校验关闭脚本路径：非空时必须存在且为 .bat；空则返回 None
+/// 校验关闭脚本路径：非空时必须存在且为 bat/cmd；空则返回 None
 fn validate_stop_path(stop_path: Option<String>) -> Result<Option<String>, String> {
     let Some(p) = stop_path.filter(|s| !s.trim().is_empty()) else {
         return Ok(None);
@@ -210,8 +205,8 @@ fn validate_stop_path(stop_path: Option<String>) -> Result<Option<String>, Strin
     if !path.is_absolute() || !path.is_file() {
         return Err(format!("关闭脚本不存在: {}", p));
     }
-    if path.extension().and_then(|s| s.to_str()).map(|s| s.eq_ignore_ascii_case("bat")) != Some(true) {
-        return Err("关闭脚本请选择 .bat 文件".into());
+    if !launcher::has_extension_in(path, launcher::SCRIPT_EXTENSIONS) {
+        return Err("关闭脚本请选择 .bat / .cmd 文件".into());
     }
     Ok(Some(p))
 }
