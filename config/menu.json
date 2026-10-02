@@ -1,64 +1,8 @@
 {
-  "scanRoot": "D:\\ScriptingTool\\cmd_tool",
   "categories": [
     {
-      "id": "web-scan",
-      "name": "Web 扫描",
-      "type": "scan",
-      "dirs": [
-        "JSFinder-master",
-        "OneForAll-master",
-        "URLFinder"
-      ]
-    },
-    {
-      "id": "recon",
-      "name": "主机扫描",
-      "type": "scan",
-      "dirs": [
-      ]
-    },
-    {
-      "id": "api-scan",
-      "name": "接口扫描",
-      "type": "scan",
-      "dirs": [
-        "api-scan"
-      ]
-    },
-
-    {
-      "id": "framework-scan",
-      "name": "框架扫描",
-      "type": "scan",
-      "dirs": [
-        "nuclei"
-      ]
-    },
-    {
-      "id": "exe-web-scan",
-      "name": "Web扫描（EXE）",
-      "type": "manual"
-    },
-    {
-      "id": "exe-host-scan",
-      "name": "主机扫描（EXE）",
-      "type": "manual"
-    },
-    {
-      "id": "exe-api-scan",
-      "name": "接口扫描（EXE）",
-      "type": "manual"
-    },
-
-    {
-      "id": "exe-framework-scan",
-      "name": "框架扫描（EXE）",
-      "type": "manual"
-    },
-    {
-      "id": "exe-other",
-      "name": "其他 EXE",
+      "id": "cat-7e22ada01756d0bc",
+      "name": "1",
       "type": "manual"
     }
   ]

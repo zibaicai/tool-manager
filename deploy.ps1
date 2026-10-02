@@ -1,4 +1,4 @@
-﻿# 工具管理系统 - 一键部署脚本（面向新电脑 / 新用户）
+# 工具管理系统 - 一键部署脚本（面向新电脑 / 新用户）
 # 完整流程：环境检测与安装 -> npm 依赖 -> 打包 -> 安装到用户目录 -> 桌面快捷方式 -> 配置初始化 -> 启动
 # 入口：双击「一键部署.cmd」
 
@@ -182,8 +182,8 @@ Write-Step 8 '初始化配置并启动'
 New-Item -ItemType Directory -Force -Path $AppDataDir | Out-Null
 $menuDst = Join-Path $AppDataDir 'menu.json'
 if (-not (Test-Path $menuDst)) {
-    # 新用户：以项目自带 menu.json 为初始模板（结构可直接用，scanRoot 按需修改）
-    Copy-Item (Join-Path $ProjectRoot 'config\menu.json') $menuDst -Force
+    # 新用户：写入不含任何个人路径的干净模板（与程序内置默认一致），scanRoot 首次启动后在应用内配置
+    '{ "scanRoot": null, "categories": [] }' | Set-Content -Path $menuDst -Encoding UTF8
     Ok '已写入初始 menu.json'
 }
 $exeToolsDst = Join-Path $AppDataDir 'exe-tools.json'
@@ -207,9 +207,11 @@ Write-Host '重要提示：'
 Write-Host "  配置目录：$AppDataDir"
 try {
     $menu = Get-Content $menuDst -Raw | ConvertFrom-Json
-    if ($menu.scanRoot -and -not (Test-Path $menu.scanRoot)) {
+    if (-not $menu.scanRoot) {
+        Write-Host '  [提示] 尚未配置 CMD 工具扫描根目录：打开应用后点右上角「设置」按钮，选择你的 CMD 工具汇总目录即可。' -ForegroundColor Yellow
+    } elseif (-not (Test-Path $menu.scanRoot)) {
         Write-Host "  [注意] menu.json 中的 scanRoot 当前为：$($menu.scanRoot)" -ForegroundColor Yellow
-        Write-Host '         该路径在本机不存在，请编辑上面的 menu.json 改为你的 CMD 工具汇总目录后，在应用内点「刷新」。' -ForegroundColor Yellow
+        Write-Host '         该路径在本机不存在，请点应用右上角「设置」改为你的 CMD 工具汇总目录。' -ForegroundColor Yellow
     }
 } catch {}
 Write-Host '  EXE 工具在应用内按分类手动录入即可；便携部署可在 tool-manager.exe 同目录建 config 文件夹。'

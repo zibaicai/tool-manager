@@ -1,14 +1,3 @@
 {
-  "tools": [
-    {
-      "id": "441addd92bb60488",
-      "exePath": "D:\\Program\\goby\\goby-win-x64-2.0.5\\Goby.exe",
-      "categoryId": "exe-host-scan"
-    },
-    {
-      "id": "42c40e5ef1a0a96b",
-      "exePath": "D:\\Program\\AppScan-V10.6.0\\AppScan\\AppScan.exe",
-      "categoryId": "exe-web"
-    }
-  ]
+  "tools": []
 }

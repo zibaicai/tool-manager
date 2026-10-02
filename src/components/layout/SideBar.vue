@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue';
 import { useToolsStore } from '../../stores/tools';
 import CategoryDialog from './CategoryDialog.vue';
@@ -19,7 +19,7 @@ const showTheme = ref(false);
     </div>
     <nav class="menu">
       <div
-        v-for="cat in store.categories"
+        v-for="cat in store.sortedCategories"
         :key="cat.id"
         class="menu-item"
         :class="{ active: cat.id === store.activeCategoryId }"
@@ -33,7 +33,7 @@ const showTheme = ref(false);
         <button class="icon-btn" title="添加目录" @click="dialogMode = 'add'">＋</button>
         <button
           class="icon-btn"
-          title="重命名当前目录"
+          title="编辑当前目录（名称 / 排序权重）"
           :disabled="!store.activeCategoryId"
           @click="dialogMode = 'rename'"
         >

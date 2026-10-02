@@ -17,6 +17,11 @@ export const useToolsStore = defineStore('tools', () => {
     tools.value.filter((t) => t.categoryId === activeCategoryId.value),
   );
 
+  /** 侧边栏展示顺序：权重降序（越大越靠前），同权重保持配置文件原顺序（依赖稳定排序） */
+  const sortedCategories = computed(() =>
+    [...categories.value].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0)),
+  );
+
   async function init() {
     activeCategoryId.value = '';
     await refresh();
@@ -31,7 +36,7 @@ export const useToolsStore = defineStore('tools', () => {
       categories.value = menu.categories;
       scanRoot.value = menu.scanRoot ?? '';
       if (!categories.value.some((c) => c.id === activeCategoryId.value)) {
-        activeCategoryId.value = categories.value[0]?.id ?? '';
+        activeCategoryId.value = sortedCategories.value[0]?.id ?? '';
       }
       await reloadAll();
     } catch (e) {
@@ -114,16 +119,20 @@ export const useToolsStore = defineStore('tools', () => {
     tools.value = tools.value.filter((t) => t.id !== id);
   }
 
-  /** 新增目录并切换过去 */
-  async function addCat(name: string, type: 'scan' | 'manual'): Promise<void> {
-    const cat = await addCategory(name, type);
+  /** 新增目录并切换过去；weight 为排序权重（越大越靠前，默认 0） */
+  async function addCat(
+    name: string,
+    type: 'scan' | 'manual',
+    weight = 0,
+  ): Promise<void> {
+    const cat = await addCategory(name, type, weight);
     await refresh();
     activeCategoryId.value = cat.id;
   }
 
-  /** 重命名目录 */
-  async function renameCat(id: string, name: string): Promise<void> {
-    await renameCategory(id, name);
+  /** 重命名目录并可同时调整权重 */
+  async function renameCat(id: string, name: string, weight: number): Promise<void> {
+    await renameCategory(id, name, weight);
     await refresh();
   }
 
@@ -147,6 +156,7 @@ export const useToolsStore = defineStore('tools', () => {
 
   return {
     categories,
+    sortedCategories,
     tools,
     activeCategoryId,
     activeTools,

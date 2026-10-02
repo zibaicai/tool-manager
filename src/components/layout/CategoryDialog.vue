@@ -9,6 +9,7 @@ const store = useToolsStore();
 const activeCat = store.categories.find((c) => c.id === store.activeCategoryId);
 const name = ref(props.mode === 'rename' ? (activeCat?.name ?? '') : '');
 const catType = ref<'scan' | 'manual'>('manual');
+const weight = ref<number>(props.mode === 'rename' ? (activeCat?.weight ?? 0) : 0);
 const error = ref('');
 const submitting = ref(false);
 
@@ -28,12 +29,13 @@ onBeforeUnmount(() => {
 
 async function submit() {
   error.value = '';
+  const w = Number.isFinite(weight.value) ? (weight.value as number) : 0;
   submitting.value = true;
   try {
     if (props.mode === 'add') {
-      await store.addCat(name.value, catType.value);
+      await store.addCat(name.value, catType.value, w);
     } else {
-      await store.renameCat(store.activeCategoryId, name.value);
+      await store.renameCat(store.activeCategoryId, name.value, w);
     }
     emit('close');
   } catch (e) {
@@ -49,7 +51,7 @@ async function submit() {
     <div class="overlay" @click.self="emit('close')">
       <div class="dialog" role="dialog" aria-modal="true">
         <header class="dialog-header">
-          <span>{{ mode === 'add' ? '添加目录' : `重命名「${activeCat?.name ?? ''}」` }}</span>
+          <span>{{ mode === 'add' ? '添加目录' : `编辑「${activeCat?.name ?? ''}」` }}</span>
           <button class="close-btn" title="关闭 (Esc)" @click="emit('close')">✕</button>
         </header>
 
@@ -62,6 +64,17 @@ async function submit() {
             placeholder="左侧菜单显示的名称"
             @keyup.enter="submit"
           />
+
+          <label class="field-label">排序权重</label>
+          <input
+            v-model.number="weight"
+            class="text-input"
+            type="number"
+            step="1"
+            placeholder="0"
+            @keyup.enter="submit"
+          />
+          <p class="hint">数值越大目录越靠上；权重相同的目录按创建先后排列，默认 0</p>
 
           <template v-if="mode === 'add'">
             <label class="field-label">目录类型</label>

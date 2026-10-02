@@ -40,6 +40,10 @@ pub struct Category {
     /// 为空表示目录初始为空，工具通过编辑卡片的「所属目录」手动分配
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dirs: Vec<String>,
+    /// 排序权重：数值越大在侧边栏越靠前；同权重保持 menu.json 中的原有先后顺序。
+    /// 旧数据缺省为 0
+    #[serde(default)]
+    pub weight: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

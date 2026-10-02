@@ -12,7 +12,7 @@ const desc = ref(props.tool.desc ?? '');
 const admin = ref(props.tool.admin ?? false);
 const stopPath = ref(props.tool.stopPath ?? '');
 const assignedCat = ref(props.tool.categoryId);
-const scanCats = computed(() => store.categories.filter((c) => c.type === 'scan'));
+const scanCats = computed(() => store.sortedCategories.filter((c) => c.type === 'scan'));
 const error = ref('');
 const submitting = ref(false);
 

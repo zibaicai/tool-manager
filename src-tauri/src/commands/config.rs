@@ -111,9 +111,15 @@ fn save_menu(app: &AppHandle, cfg: &MenuConfig) -> Result<(), String> {
     fs::write(&p, json).map_err(|e| format!("写入 menu.json 失败: {}", e))
 }
 
-/// 新增目录（分类）。category_type 为 scan（自动扫描）或 manual（EXE 手动录入）
+/// 新增目录（分类）。category_type 为 scan（自动扫描）或 manual（EXE 手动录入）；
+/// weight 为排序权重，越大越靠前，同权重按创建先后排列
 #[tauri::command]
-pub fn add_category(app: AppHandle, name: String, category_type: String) -> Result<Category, String> {
+pub fn add_category(
+    app: AppHandle,
+    name: String,
+    category_type: String,
+    weight: Option<i32>,
+) -> Result<Category, String> {
     let name = name.trim().to_string();
     if name.is_empty() {
         return Err("请填写目录名称".into());
@@ -135,15 +141,21 @@ pub fn add_category(app: AppHandle, name: String, category_type: String) -> Resu
         category_type,
         scan_path: None,
         dirs: vec![],
+        weight: weight.unwrap_or(0),
     };
     cfg.categories.push(cat.clone());
     save_menu(&app, &cfg)?;
     Ok(cat)
 }
 
-/// 重命名目录（只改显示名，id 不变，不影响其下工具关联）
+/// 重命名目录并可同时调整排序权重（id 不变，不影响其下工具关联）
 #[tauri::command]
-pub fn rename_category(app: AppHandle, id: String, name: String) -> Result<(), String> {
+pub fn rename_category(
+    app: AppHandle,
+    id: String,
+    name: String,
+    weight: Option<i32>,
+) -> Result<(), String> {
     let name = name.trim().to_string();
     if name.is_empty() {
         return Err("请填写目录名称".into());
@@ -155,6 +167,9 @@ pub fn rename_category(app: AppHandle, id: String, name: String) -> Result<(), S
         .find(|c| c.id == id)
         .ok_or("未找到该目录")?;
     cat.name = name;
+    if let Some(w) = weight {
+        cat.weight = w;
+    }
     save_menu(&app, &cfg)
 }
 

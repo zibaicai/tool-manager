@@ -27,6 +27,8 @@ export interface Category {
   scanPath?: string;
   /** 手动归属：汇总目录下划入本分类的一级子目录名；为空则目录为空（工具通过手动分配加入） */
   dirs?: string[];
+  /** 排序权重：越大越靠前；缺省 0，同权重保持配置文件中的原顺序 */
+  weight?: number;
 }
 
 export interface MenuConfig {
