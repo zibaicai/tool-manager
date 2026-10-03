@@ -152,13 +152,16 @@ pub fn add_category(
     Ok(cat)
 }
 
-/// 重命名目录并可同时调整排序权重（id 不变，不影响其下工具关联）
+/// 重命名目录并可同时调整排序权重与分类级扫描目录（id 不变，不影响其下工具关联）。
+/// scan_path 为 Some 时更新：空串表示清除（回退到顶层 scanRoot）；
+/// 与顶层 scanRoot 一样不校验目录是否存在，避免拦截尚未挂载的盘
 #[tauri::command]
 pub fn rename_category(
     app: AppHandle,
     id: String,
     name: String,
     weight: Option<i32>,
+    scan_path: Option<String>,
 ) -> Result<(), String> {
     let name = name.trim().to_string();
     if name.is_empty() {
@@ -173,6 +176,9 @@ pub fn rename_category(
     cat.name = name;
     if let Some(w) = weight {
         cat.weight = w;
+    }
+    if let Some(p) = scan_path {
+        cat.scan_path = Some(p.trim().to_string()).filter(|p| !p.is_empty());
     }
     save_menu(&app, &cfg)
 }

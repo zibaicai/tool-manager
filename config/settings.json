@@ -1,0 +1,13 @@
+{
+  "mode": "dark",
+  "opacity": 0.45,
+  "dialogOpacity": 0.55,
+  "dialogBlur": 13.0,
+  "bg": "C:\\Users\\叶洛\\Downloads\\S5-ASH-25.png",
+  "customBgs": [
+    {
+      "path": "C:\\Users\\叶洛\\Downloads\\S5-ASH-25.png",
+      "theme": "dark"
+    }
+  ]
+}

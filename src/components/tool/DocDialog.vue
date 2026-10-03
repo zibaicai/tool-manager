@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted } from 'vue';
 import type { Tool } from '../../types';
 import { readTextFile } from '../../api/fs';
 import { renderMarkdown } from '../../utils/markdown';
+import BaseDialog from '../common/BaseDialog.vue';
 
 const props = defineProps<{ tool: Tool }>();
 const emit = defineEmits<{ close: [] }>();
@@ -11,13 +12,7 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const html = ref('');
 
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close');
-}
-
 onMounted(async () => {
-  window.addEventListener('keydown', onKeydown);
-  document.body.style.overflow = 'hidden';
   if (!props.tool.docPath) {
     loading.value = false;
     error.value = '该工具未提供 Ops.md';
@@ -32,89 +27,23 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeydown);
-  document.body.style.overflow = '';
-});
 </script>
 
 <template>
-  <Teleport to="body">
-    <div class="overlay" @click.self="emit('close')">
-      <div class="panel" role="dialog" aria-modal="true">
-      <header class="panel-header">
-        <span class="doc-title">{{ tool.title }} · 使用文档</span>
-        <button class="close-btn" title="关闭 (Esc)" @click="emit('close')">✕</button>
-      </header>
-
-      <div class="panel-body">
-        <div v-if="loading" class="state">文档加载中...</div>
-        <div v-else-if="error" class="state error">{{ error }}</div>
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <article v-else class="markdown-body" v-html="html"></article>
-      </div>
-      </div>
-    </div>
-  </Teleport>
+  <BaseDialog
+    :title="`${tool.title} · 使用文档`"
+    variant="panel"
+    width="min(880px, 94vw)"
+    @close="emit('close')"
+  >
+    <div v-if="loading" class="state">文档加载中...</div>
+    <div v-else-if="error" class="state error">{{ error }}</div>
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <article v-else class="markdown-body" v-html="html"></article>
+  </BaseDialog>
 </template>
 
 <style scoped>
-.overlay {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: flex-start;
-  z-index: 1000;
-}
-.panel {
-  background: var(--dialog-bg);
-  backdrop-filter: blur(var(--dialog-blur));
-  -webkit-backdrop-filter: blur(var(--dialog-blur));
-  --text: var(--dialog-fg);
-  --text-sub: var(--dialog-fg-sub);
-  width: min(880px, 94vw);
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.18);
-}
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--dialog-border);
-  flex-shrink: 0;
-}
-.doc-title {
-  font-size: 15px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.close-btn {
-  border: none;
-  background: transparent;
-  font-size: 16px;
-  color: var(--text-sub);
-  padding: 4px 8px;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-.close-btn:hover {
-  background: var(--dialog-hover);
-  color: var(--text);
-}
-.panel-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
 .state {
   padding: 60px 20px;
   text-align: center;

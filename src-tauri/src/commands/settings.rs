@@ -8,8 +8,9 @@ use std::fs;
 use tauri::AppHandle;
 
 /// 用户导入的自定义背景图
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ts_rs::TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../src/types/bindings.ts", rename_all = "camelCase")]
 pub struct CustomBg {
     /// 图片绝对路径
     pub path: String,
@@ -17,8 +18,9 @@ pub struct CustomBg {
     pub theme: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ts_rs::TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../src/types/bindings.ts", rename_all = "camelCase")]
 pub struct ThemeSettings {
     /// default（保持原样）/ light / dark
     #[serde(default = "default_mode")]

@@ -2,13 +2,14 @@
 import { ref } from 'vue';
 import type { Tool } from '../../types';
 import { launchTool, openPath, stopTool } from '../../api/launcher';
-import { useToolsStore } from '../../stores/tools';
+import { useExeToolsStore } from '../../stores/exeTools';
+import { alert, confirm } from '../../composables/useFeedback';
 import { TOOL_TYPES } from '../../constants';
 import DocDialog from './DocDialog.vue';
 import ExeToolEditDialog from './ExeToolEditDialog.vue';
 
 const props = defineProps<{ tool: Tool }>();
-const store = useToolsStore();
+const exeStore = useExeToolsStore();
 
 const showDoc = ref(false);
 const showEdit = ref(false);
@@ -19,11 +20,17 @@ function openDoc() {
 }
 
 async function remove() {
-  if (!window.confirm(`确定从列表移除「${props.tool.title}」吗？（不会删除 exe 文件本身）`)) return;
+  const ok = await confirm({
+    title: '移除工具',
+    message: `确定从列表移除「${props.tool.title}」吗？（不会删除 exe 文件本身）`,
+    confirmText: '移除',
+    danger: true,
+  });
+  if (!ok) return;
   try {
-    await store.removeExe(props.tool.id);
+    await exeStore.removeExe(props.tool.id);
   } catch (e) {
-    alert('移除失败: ' + e);
+    await alert('移除失败: ' + e);
   }
 }
 
@@ -31,7 +38,7 @@ async function openCmd() {
   try {
     await launchTool(props.tool);
   } catch (e) {
-    alert('启动失败: ' + e);
+    await alert('启动失败: ' + e);
   }
 }
 
@@ -39,7 +46,7 @@ async function stop() {
   try {
     await stopTool(props.tool);
   } catch (e) {
-    alert('关闭失败: ' + e);
+    await alert('关闭失败: ' + e);
   }
 }
 
@@ -47,7 +54,7 @@ async function openDir() {
   try {
     await openPath(props.tool.path);
   } catch (e) {
-    alert('打开目录失败: ' + e);
+    await alert('打开目录失败: ' + e);
   }
 }
 </script>

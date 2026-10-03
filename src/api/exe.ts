@@ -14,6 +14,7 @@ export function addExeTool(
   desc?: string,
   admin?: boolean,
   stopPath?: string,
+  stopAdmin?: boolean,
 ): Promise<Tool> {
   return invoke('add_exe_tool', {
     exePath,
@@ -22,6 +23,7 @@ export function addExeTool(
     desc: desc?.trim() || null,
     admin: admin ?? false,
     stopPath: stopPath?.trim() || null,
+    stopAdmin: stopAdmin ?? false,
   });
 }
 
@@ -32,6 +34,7 @@ export function updateExeTool(
   desc: string,
   admin: boolean,
   stopPath: string,
+  stopAdmin: boolean,
 ): Promise<Tool> {
   return invoke('update_exe_tool', {
     id,
@@ -39,6 +42,7 @@ export function updateExeTool(
     desc: desc.trim() || null,
     admin,
     stopPath: stopPath.trim() || null,
+    stopAdmin,
   });
 }
 

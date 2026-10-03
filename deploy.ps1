@@ -11,8 +11,11 @@ $InstallDir  = Join-Path $env:LOCALAPPDATA 'Programs\ToolManager'
 $InstallExe  = Join-Path $InstallDir 'tool-manager.exe'
 $AppDataDir  = Join-Path $env:APPDATA 'com.toolmanager.app'
 $AppName     = 'tool-manager'
+# 部署总步数：仅在增删步骤时维护这里；Write-Step 的序号自动递增
+$TotalSteps  = 8
+$script:StepIndex = 0
 
-function Write-Step($n, $msg) { Write-Host "`n[$n/8] $msg" -ForegroundColor Cyan }
+function Write-Step($msg) { $script:StepIndex++; Write-Host "`n[$script:StepIndex/$TotalSteps] $msg" -ForegroundColor Cyan }
 function Die($msg) { Write-Host "`n[失败] $msg" -ForegroundColor Red; Read-Host "`n按回车键退出"; exit 1 }
 function Ok($msg)  { Write-Host "  [OK] $msg" -ForegroundColor Green }
 
@@ -80,7 +83,7 @@ if (-not (Test-Command 'winget')) {
 }
 
 # ---------- 1. 安装 Node.js ----------
-Write-Step 1 '检查 Node.js 环境'
+Write-Step '检查 Node.js 环境'
 if ($needNode) {
     Invoke-WingetInstall 'OpenJS.NodeJS.LTS' 'Node.js LTS'
     if (-not (Test-Command 'node')) { Die 'Node.js 安装后仍未找到，请重启电脑后重新运行本脚本。' }
@@ -88,7 +91,7 @@ if ($needNode) {
 Ok "Node.js $(node -v)"
 
 # ---------- 2. 安装 Rust 工具链（rustup 按用户安装，无需管理员） ----------
-Write-Step 2 '检查 Rust 工具链'
+Write-Step '检查 Rust 工具链'
 $cargoBin = Join-Path $env:USERPROFILE '.cargo\bin\cargo.exe'
 if (-not (Test-Path $cargoBin) -and -not (Test-Command 'cargo')) {
     Write-Host '  正在下载并安装 rustup（按用户安装，无需管理员）...' -ForegroundColor Yellow
@@ -107,7 +110,7 @@ if (-not (Test-Command 'cargo')) { Die '未找到 cargo，请确认 Rust 安装�
 Ok "cargo $(cargo --version)"
 
 # ---------- 3. 安装 MSVC C++ 生成工具 ----------
-Write-Step 3 '检查 C++ 生成工具（MSVC）'
+Write-Step '检查 C++ 生成工具（MSVC）'
 if ($needMsvc) {
     Write-Host '  即将安装 Visual Studio 2022 Build Tools（含 MSVC 与 Windows SDK，体积较大，约 3~6GB，请耐心等待）...' -ForegroundColor Yellow
     winget install --id Microsoft.VisualStudio.2022.BuildTools -e --source winget `
@@ -122,7 +125,7 @@ if (-not (Test-Msvc)) { Die '未检测到 MSVC 生成工具，请安装 Visual S
 Ok 'MSVC C++ 生成工具就绪'
 
 # ---------- 4. 安装 WebView2 运行时 ----------
-Write-Step 4 '检查 WebView2 运行时'
+Write-Step '检查 WebView2 运行时'
 if ($needWeb) {
     Invoke-WingetInstall 'Microsoft.EdgeWebView2Runtime' 'WebView2 Runtime'
 }
@@ -130,7 +133,7 @@ if (-not (Test-WebView2)) { Die 'WebView2 运行时安装失败，请手动安�
 Ok 'WebView2 运行时就绪'
 
 # ---------- 5. 安装前端依赖 ----------
-Write-Step 5 '安装前端依赖（npm install）'
+Write-Step '安装前端依赖（npm install）'
 Push-Location $ProjectRoot
 try {
     if (Test-Path (Join-Path $ProjectRoot 'node_modules')) {
@@ -141,7 +144,7 @@ try {
     }
 
     # ---------- 6. 打包 ----------
-    Write-Step 6 '打包应用（npx tauri build，首次较慢）'
+    Write-Step '打包应用（npx tauri build，首次较慢）'
     $running = Get-Process $AppName -ErrorAction SilentlyContinue
     if ($running) { $running | Stop-Process -Force; Start-Sleep -Seconds 2 }
     npx tauri build --no-bundle
@@ -153,7 +156,7 @@ if (-not (Test-Path $BuildExe)) { Die "未找到构建产物：$BuildExe" }
 Ok '打包完成'
 
 # ---------- 7. 安装到用户目录 + 桌面快捷方式 ----------
-Write-Step 7 '安装程序并创建桌面快捷方式'
+Write-Step '安装程序并创建桌面快捷方式'
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 Copy-Item $BuildExe $InstallExe -Force
 Ok "程序已安装：$InstallExe"
@@ -178,7 +181,7 @@ try {
 }
 
 # ---------- 8. 初始化用户配置并启动 ----------
-Write-Step 8 '初始化配置并启动'
+Write-Step '初始化配置并启动'
 New-Item -ItemType Directory -Force -Path $AppDataDir | Out-Null
 $menuDst = Join-Path $AppDataDir 'menu.json'
 if (-not (Test-Path $menuDst)) {

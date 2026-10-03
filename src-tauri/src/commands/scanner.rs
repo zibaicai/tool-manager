@@ -172,6 +172,7 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
         desc: None,
         admin: false,
         stop_path: None,
+        stop_admin: false,
     })
 }
 
@@ -612,9 +613,37 @@ pub fn update_cmd_tool(
     Ok(tool)
 }
 
+/// 读取工具文档（Markdown）。出于安全考虑仅允许读取：
+/// 1. 已配置扫描根（含分类专属扫描目录）之下的 .md；
+/// 2. 已录入 EXE 工具所在目录之下的 .md。
+/// 所有路径 canonicalize 后再比较以防 ../ 绕越；配置不可读或根不存在时拒绝。
 #[tauri::command]
-pub fn read_text_file(path: String) -> Result<String, String> {
-    fs::read_to_string(&path).map_err(|e| format!("读取失败 {}: {}", path, e))
+pub fn read_text_file(app: AppHandle, path: String) -> Result<String, String> {
+    let target = Path::new(&path);
+    if !target.is_file() {
+        return Err(format!("文件不存在: {}", path));
+    }
+    if !target
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("md"))
+    {
+        return Err("仅支持读取工具目录内的 Markdown (.md) 文档".into());
+    }
+    let menu = crate::commands::config::load_menu_config(app.clone())?;
+    let mut roots = collect_roots(&menu);
+    roots.extend(crate::commands::exetools::exe_tool_dirs(&app));
+
+    let real =
+        fs::canonicalize(target).map_err(|e| format!("路径解析失败 {}: {}", path, e))?;
+    let allowed = roots
+        .iter()
+        .filter_map(|r| fs::canonicalize(r).ok())
+        .any(|r| real == r || real.starts_with(&r));
+    if !allowed {
+        return Err("文档不在已配置的工具目录范围内，拒绝读取".into());
+    }
+    fs::read_to_string(&real).map_err(|e| format!("读取失败 {}: {}", path, e))
 }
 
 #[cfg(test)]

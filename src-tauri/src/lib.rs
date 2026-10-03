@@ -1,3 +1,7 @@
+// MSVC 链接器会向 stdout 打印「正在创建库...」等信息，触发 linker_messages 警告；
+// 这些仅是链接进度提示，非问题，统一在 crate 级别抑制，保持构建输出干净。
+#![cfg_attr(windows, allow(linker_messages))]
+
 mod commands;
 mod constants;
 mod models;

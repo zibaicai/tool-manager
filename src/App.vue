@@ -4,10 +4,11 @@ import TitleBar from './components/layout/TitleBar.vue';
 import SideBar from './components/layout/SideBar.vue';
 import ContentArea from './components/layout/ContentArea.vue';
 import SettingsDialog from './components/layout/SettingsDialog.vue';
-import { useToolsStore } from './stores/tools';
+import FeedbackHost from './components/common/FeedbackHost.vue';
+import { useCategoryStore } from './stores/categories';
 import { useSettingsStore } from './stores/settings';
 
-const store = useToolsStore();
+const store = useCategoryStore();
 const settings = useSettingsStore();
 const showSettings = ref(false);
 
@@ -25,6 +26,7 @@ onMounted(() => {
       <ContentArea />
     </div>
     <SettingsDialog v-if="showSettings" @close="showSettings = false" />
+    <FeedbackHost />
   </div>
 </template>
 

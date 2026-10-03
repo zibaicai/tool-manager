@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useToolsStore } from '../../stores/tools';
+import { useCategoryStore } from '../../stores/categories';
 import CategoryDialog from './CategoryDialog.vue';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog.vue';
 import ThemeDialog from './ThemeDialog.vue';
 
-const store = useToolsStore();
+const store = useCategoryStore();
 const dialogMode = ref<'add' | 'rename' | null>(null);
 const showDelete = ref(false);
 const showTheme = ref(false);

@@ -1,40 +1,15 @@
+// 领域类型：结构体以后端 Rust 为唯一来源，ts-rs 生成到 ./bindings.ts（cargo test 时导出）。
+// 这里只做字面量联合收窄与再导出，不手写字段，字段增删改由 Rust 侧驱动。
 import type { CategoryType, ToolType } from '../constants';
+import type {
+  Tool as GenTool,
+  Category as GenCategory,
+  MenuConfig as GenMenuConfig,
+} from './bindings';
 
 export type { ToolType, CategoryType };
+export type { CustomBg, ThemeSettings } from './bindings';
 
-export interface Tool {
-  id: string;
-  type: ToolType;
-  title: string;
-  path: string;
-  docPath: string | null;
-  icon: string | null;
-  categoryId: string;
-  available: boolean;
-  /** EXE 类工具的启动参数（如 -c "..."）；CMD 类无此字段 */
-  args?: string | null;
-  /** 副标题：工具用途描述，展示在标题下方（EXE 类） */
-  desc?: string | null;
-  /** 以管理员身份启动，触发 UAC（EXE 类） */
-  admin?: boolean;
-  /** 关闭脚本（.bat）路径；设置后卡片出现「关闭工具」按钮（EXE 类） */
-  stopPath?: string | null;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  type: CategoryType | 'system';
-  /** 分类级扫描目录，缺省回退到 MenuConfig.scanRoot */
-  scanPath?: string;
-  /** 手动归属：汇总目录下划入本分类的一级子目录名；为空则目录为空（工具通过手动分配加入） */
-  dirs?: string[];
-  /** 排序权重：越大越靠前；缺省 0，同权重保持配置文件中的原顺序 */
-  weight?: number;
-}
-
-export interface MenuConfig {
-  categories: Category[];
-  /** 工具目录汇总根目录 */
-  scanRoot?: string;
-}
+export type Tool = Omit<GenTool, 'type'> & { type: ToolType };
+export type Category = Omit<GenCategory, 'type'> & { type: CategoryType | 'system' };
+export type MenuConfig = Omit<GenMenuConfig, 'categories'> & { categories: Category[] };

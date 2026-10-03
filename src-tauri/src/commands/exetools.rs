@@ -25,9 +25,12 @@ pub struct ExeToolEntry {
     /// 以管理员身份启动（触发 UAC），如 net.exe 启动系统服务
     #[serde(default, skip_serializing_if = "is_false")]
     pub admin: bool,
-    /// 关闭脚本（.bat）绝对路径：用于启动后还需停止服务的工具；设置后卡片出现「关闭工具」按钮
+    /// 关闭脚本（.bat/.cmd）绝对路径：用于启动后还需停止服务的工具；设置后卡片出现「关闭工具」按钮
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stop_path: Option<String>,
+    /// 关闭脚本是否独立提权运行（不继承启动用 admin）
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub stop_admin: bool,
 }
 
 fn is_false(b: &bool) -> bool {
@@ -56,6 +59,18 @@ fn save_config(app: &AppHandle, cfg: &ExeToolConfig) -> Result<(), String> {
     let json = serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?;
     fs::write(config_file(app)?, json)
         .map_err(|e| format!("写入 {} 失败: {}", EXE_TOOLS_FILE, e))
+}
+
+/// 所有已录入 EXE 工具的所在目录（供文档读取范围校验等使用）；配置不可读时返回空
+pub(crate) fn exe_tool_dirs(app: &AppHandle) -> Vec<PathBuf> {
+    load_config(app)
+        .map(|c| {
+            c.tools
+                .iter()
+                .filter_map(|t| Path::new(&t.exe_path).parent().map(|p| p.to_path_buf()))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// 把录入记录补全为展示用 Tool：
@@ -100,6 +115,7 @@ fn enrich(entry: &ExeToolEntry) -> Tool {
         desc: entry.desc.clone(),
         admin: entry.admin,
         stop_path: entry.stop_path.clone(),
+        stop_admin: entry.stop_admin,
     }
 }
 
@@ -149,6 +165,7 @@ pub fn add_exe_tool(
     desc: Option<String>,
     admin: Option<bool>,
     stop_path: Option<String>,
+    stop_admin: Option<bool>,
 ) -> Result<Tool, String> {
     if exe_path.trim().is_empty() {
         return Err("请填写 exe 的绝对路径或启动命令".into());
@@ -191,6 +208,7 @@ pub fn add_exe_tool(
         desc,
         admin: admin.unwrap_or(false),
         stop_path,
+        stop_admin: stop_admin.unwrap_or(false),
     };
     cfg.tools.push(entry.clone());
     save_config(&app, &cfg)?;
@@ -213,7 +231,7 @@ fn validate_stop_path(stop_path: Option<String>) -> Result<Option<String>, Strin
     Ok(Some(p))
 }
 
-/// 更新已录入工具的标题/副标题/管理员启动标记/关闭脚本；标题传空字符串表示清除（恢复自动派生）
+/// 更新已录入工具的标题/副标题/管理员启动标记/关闭脚本及其提权标记；标题传空字符串表示清除（恢复自动派生）
 #[tauri::command]
 pub fn update_exe_tool(
     app: AppHandle,
@@ -222,6 +240,7 @@ pub fn update_exe_tool(
     desc: Option<String>,
     admin: Option<bool>,
     stop_path: Option<String>,
+    stop_admin: Option<bool>,
 ) -> Result<Tool, String> {
     let title = title.filter(|t| !t.trim().is_empty()).map(|t| t.trim().to_string());
     let desc = desc.filter(|d| !d.trim().is_empty()).map(|d| d.trim().to_string());
@@ -238,6 +257,9 @@ pub fn update_exe_tool(
     entry.stop_path = stop_path;
     if let Some(a) = admin {
         entry.admin = a;
+    }
+    if let Some(a) = stop_admin {
+        entry.stop_admin = a;
     }
     let updated = enrich(entry);
     save_config(&app, &cfg)?;

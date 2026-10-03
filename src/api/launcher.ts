@@ -21,12 +21,12 @@ export function openPath(path: string): Promise<void> {
   return invoke('open_path', { path });
 }
 
-/** 执行关闭脚本（.bat/.cmd）：与启动同一套逻辑（可见 cmd 窗口 / UAC 提权） */
+/** 执行关闭脚本（.bat/.cmd）：与启动同一套执行逻辑，但提权与否由 stopAdmin 独立决定 */
 export function stopTool(tool: Tool): Promise<void> {
   return invoke('launch_tool', {
     toolType: TOOL_TYPES.EXE,
     path: tool.stopPath,
     args: null,
-    admin: tool.admin ?? false,
+    admin: tool.stopAdmin ?? false,
   });
 }

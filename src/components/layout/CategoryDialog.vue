@@ -1,212 +1,118 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { useToolsStore } from '../../stores/tools';
+import { computed, ref } from 'vue';
+import { open } from '@tauri-apps/plugin-dialog';
+import { useCategoryStore } from '../../stores/categories';
 import { CATEGORY_TYPES, DEFAULT_WEIGHT, type CategoryType } from '../../constants';
+import { useAsyncSubmit } from '../../composables/useAsyncSubmit';
+import BaseDialog from '../common/BaseDialog.vue';
 
 const props = defineProps<{ mode: 'add' | 'rename' }>();
 const emit = defineEmits<{ close: [] }>();
-const store = useToolsStore();
+const store = useCategoryStore();
 
 const activeCat = store.categories.find((c) => c.id === store.activeCategoryId);
 const name = ref(props.mode === 'rename' ? (activeCat?.name ?? '') : '');
-const catType = ref<CategoryType>(CATEGORY_TYPES.MANUAL);
+const catType = ref<CategoryType>(
+  props.mode === 'rename'
+    ? (activeCat?.type === CATEGORY_TYPES.SCAN ? CATEGORY_TYPES.SCAN : CATEGORY_TYPES.MANUAL)
+    : CATEGORY_TYPES.MANUAL,
+);
 const weight = ref<number>(
   props.mode === 'rename' ? (activeCat?.weight ?? DEFAULT_WEIGHT) : DEFAULT_WEIGHT,
 );
-const error = ref('');
-const submitting = ref(false);
+/** 分类级扫描目录；仅 scan 类型编辑时展示，空串表示回退顶层 scanRoot */
+const scanPath = ref(props.mode === 'rename' ? (activeCat?.scanPath ?? '') : '');
+const showScanPath = computed(
+  () => props.mode === 'rename' && catType.value === CATEGORY_TYPES.SCAN,
+);
+const { submitting, error, run } = useAsyncSubmit();
 
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close');
+/** 调出系统目录选择框 */
+async function browse() {
+  const selected = await open({
+    title: '选择该分类的扫描目录（留空则使用顶层 scanRoot）',
+    directory: true,
+    multiple: false,
+    defaultPath: scanPath.value || undefined,
+  });
+  if (typeof selected === 'string') scanPath.value = selected;
 }
 
-onMounted(() => {
-  window.addEventListener('keydown', onKeydown);
-  document.body.style.overflow = 'hidden';
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeydown);
-  document.body.style.overflow = '';
-});
-
 async function submit() {
-  error.value = '';
   const w = Number.isFinite(weight.value) ? (weight.value as number) : DEFAULT_WEIGHT;
-  submitting.value = true;
-  try {
+  const ok = await run(async () => {
     if (props.mode === 'add') {
       await store.addCat(name.value, catType.value, w);
     } else {
-      await store.renameCat(store.activeCategoryId, name.value, w);
+      await store.renameCat(store.activeCategoryId, name.value, w, scanPath.value);
     }
-    emit('close');
-  } catch (e) {
-    error.value = String(e);
-  } finally {
-    submitting.value = false;
-  }
+  });
+  if (ok) emit('close');
 }
 </script>
 
 <template>
-  <Teleport to="body">
-    <div class="overlay" @click.self="emit('close')">
-      <div class="dialog" role="dialog" aria-modal="true">
-        <header class="dialog-header">
-          <span>{{ mode === 'add' ? '添加目录' : `编辑「${activeCat?.name ?? ''}」` }}</span>
-          <button class="close-btn" title="关闭 (Esc)" @click="emit('close')">✕</button>
-        </header>
+  <BaseDialog
+    :title="mode === 'add' ? '添加目录' : `编辑「${activeCat?.name ?? ''}」`"
+    width="min(440px, 92vw)"
+    @close="emit('close')"
+  >
+    <label class="tm-field-label">目录名称</label>
+    <input
+      v-model="name"
+      class="tm-text-input"
+      type="text"
+      placeholder="左侧菜单显示的名称"
+      @keyup.enter="submit"
+    />
 
-        <div class="dialog-body">
-          <label class="field-label">目录名称</label>
-          <input
-            v-model="name"
-            class="text-input"
-            type="text"
-            placeholder="左侧菜单显示的名称"
-            @keyup.enter="submit"
-          />
+    <label class="tm-field-label">排序权重</label>
+    <input
+      v-model.number="weight"
+      class="tm-text-input"
+      type="number"
+      step="1"
+      placeholder="0"
+      @keyup.enter="submit"
+    />
+    <p class="tm-hint">数值越大目录越靠上；权重相同的目录按创建先后排列，默认 0</p>
 
-          <label class="field-label">排序权重</label>
-          <input
-            v-model.number="weight"
-            class="text-input"
-            type="number"
-            step="1"
-            placeholder="0"
-            @keyup.enter="submit"
-          />
-          <p class="hint">数值越大目录越靠上；权重相同的目录按创建先后排列，默认 0</p>
+    <template v-if="mode === 'add'">
+      <label class="tm-field-label">目录类型</label>
+      <select v-model="catType" class="tm-text-input">
+        <option :value="CATEGORY_TYPES.MANUAL">EXE 手动录入</option>
+        <option :value="CATEGORY_TYPES.SCAN">CMD 自动扫描（扫描 scanRoot 汇总目录）</option>
+      </select>
+      <p class="tm-hint">新建的 CMD 目录初始为空，请在工具卡片的编辑菜单中通过「所属目录」分配工具</p>
+    </template>
 
-          <template v-if="mode === 'add'">
-            <label class="field-label">目录类型</label>
-            <select v-model="catType" class="text-input">
-              <option :value="CATEGORY_TYPES.MANUAL">EXE 手动录入</option>
-              <option :value="CATEGORY_TYPES.SCAN">CMD 自动扫描（扫描 scanRoot 汇总目录）</option>
-            </select>
-            <p class="hint">新建的 CMD 目录初始为空，请在工具卡片的编辑菜单中通过「所属目录」分配工具</p>
-          </template>
-          <p v-if="error" class="error">{{ error }}</p>
-        </div>
-
-        <footer class="dialog-footer">
-          <button class="btn" @click="emit('close')">取消</button>
-          <button class="btn primary" :disabled="submitting" @click="submit">
-            {{ submitting ? '保存中...' : '保存' }}
-          </button>
-        </footer>
+    <template v-else-if="showScanPath">
+      <label class="tm-field-label">分类专属扫描目录（可选）</label>
+      <div class="tm-path-row">
+        <input
+          v-model="scanPath"
+          class="tm-text-input"
+          type="text"
+          placeholder="留空则使用全局 scanRoot"
+          spellcheck="false"
+          @keyup.enter="submit"
+        />
+        <button class="tm-browse-btn" type="button" title="浏览选择目录" @click="browse">
+          浏览…
+        </button>
       </div>
-    </div>
-  </Teleport>
-</template>
+      <p class="tm-hint">
+        设置后该分类只扫描此目录（按 dirs 名单/孤儿规则）；清空保存则回退到全局 scanRoot
+      </p>
+    </template>
 
-<style scoped>
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 18vh;
-  z-index: 1000;
-}
-.dialog {
-  background: var(--dialog-bg);
-  backdrop-filter: blur(var(--dialog-blur));
-  -webkit-backdrop-filter: blur(var(--dialog-blur));
-  --text: var(--dialog-fg);
-  --text-sub: var(--dialog-fg-sub);
-  width: min(440px, 92vw);
-  border-radius: 8px;
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.2);
-}
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--dialog-border);
-  font-size: 15px;
-  font-weight: 600;
-}
-.close-btn {
-  border: none;
-  background: transparent;
-  font-size: 16px;
-  color: var(--text-sub);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-.close-btn:hover {
-  background: var(--dialog-hover);
-  color: var(--text);
-}
-.dialog-body {
-  padding: 16px 18px;
-}
-.field-label {
-  display: block;
-  font-size: 13px;
-  color: var(--text);
-  margin-bottom: 6px;
-  margin-top: 12px;
-}
-.field-label:first-of-type {
-  margin-top: 0;
-}
-.text-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 7px 10px;
-  font-size: 13px;
-  border: 1px solid var(--input-border);
-  border-radius: 6px;
-  outline: none;
-  background: var(--input-bg);
-}
-.text-input:focus {
-  border-color: var(--primary);
-}
-.hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--text-sub);
-  line-height: 1.5;
-}
-.error {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #d33;
-}
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 18px;
-  border-top: 1px solid var(--dialog-border);
-}
-.btn {
-  padding: 7px 18px;
-  font-size: 13px;
-  border: 1px solid var(--dialog-border);
-  background: var(--dialog-btn-bg);
-  border-radius: 6px;
-}
-.btn:hover:not(:disabled) {
-  background: var(--dialog-btn-hover);
-}
-.btn.primary {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-}
-.btn.primary:hover:not(:disabled) {
-  background: var(--btn-primary-hover-bg);
-}
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-</style>
+    <p v-if="error" class="tm-error">{{ error }}</p>
+
+    <template #footer>
+      <button class="tm-btn" @click="emit('close')">取消</button>
+      <button class="tm-btn primary" :disabled="submitting" @click="submit">
+        {{ submitting ? '保存中...' : '保存' }}
+      </button>
+    </template>
+  </BaseDialog>
+</template>

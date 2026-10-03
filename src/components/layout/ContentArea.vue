@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useToolsStore } from '../../stores/tools';
+import { useCategoryStore } from '../../stores/categories';
 import { CATEGORY_TYPES } from '../../constants';
 import ToolGrid from '../tool/ToolGrid.vue';
 import ExeToolForm from '../tool/ExeToolForm.vue';
 
-const store = useToolsStore();
+const store = useCategoryStore();
 const showForm = ref(false);
 
 const activeCategory = computed(() =>

@@ -1,35 +1,22 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { convertFileSrc } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-dialog';
 import { loadThemeSettings, saveThemeSettings, type CustomBg } from '../api/settings';
 import {
-  BTN_ALPHA_STEP,
   BUILTIN_BG_PREFIX,
-  CARD_ALPHA_STEP,
   DEFAULT_DIALOG_BLUR,
   DEFAULT_DIALOG_OPACITY,
   DEFAULT_PAGE_OPACITY,
-  DIALOG_BLUR_MAX,
-  OPACITY_MAX,
-  OPACITY_MIN,
   THEME_MODES,
   type ThemeMode,
 } from '../constants';
+import { BUILTIN_BGS } from '../utils/themeBg';
+import { applyThemeDom, type ThemeDomState } from '../utils/themeDom';
 
-/** 每个主题大类的内置背景图（public/themes 下，随应用打包） */
-export const BUILTIN_BGS: Record<Exclude<ThemeMode, typeof THEME_MODES.DEFAULT>, string[]> = {
-  [THEME_MODES.LIGHT]: ['light-1', 'light-2', 'light-3'],
-  [THEME_MODES.DARK]: ['dark-1', 'dark-2', 'dark-3'],
-};
-
-/** 背景引用转可加载 URL："builtin:xxx" → 打包资源；绝对路径 → asset 协议 */
-export function bgUrl(bg: string): string {
-  return bg.startsWith(BUILTIN_BG_PREFIX)
-    ? `/themes/${bg.slice(BUILTIN_BG_PREFIX.length)}.svg`
-    : convertFileSrc(bg);
-}
-
+/**
+ * 主题设置领域：仅负责状态与后端持久化。
+ * DOM 注入见 utils/themeDom.ts，背景 URL 纯函数见 utils/themeBg.ts，
+ * 系统文件选择框由 ThemeDialog 调起后把路径交给 addCustomBg。
+ */
 export const useSettingsStore = defineStore('settings', () => {
   const mode = ref<ThemeMode>(THEME_MODES.DEFAULT);
   const opacity = ref(DEFAULT_PAGE_OPACITY);
@@ -40,34 +27,18 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const themed = computed(() => mode.value !== THEME_MODES.DEFAULT);
 
-  /** 弹窗参数与主题模式无关，默认/浅色/深色下都注入到根节点 */
-  function applyDialogVars(root: HTMLElement) {
-    const a = Math.min(OPACITY_MAX, Math.max(OPACITY_MIN, dialogOpacity.value));
-    const b = Math.min(DIALOG_BLUR_MAX, Math.max(OPACITY_MIN, dialogBlur.value));
-    root.style.setProperty('--dialog-alpha', String(a));
-    root.style.setProperty('--dialog-blur', `${b}px`);
+  function domState(): ThemeDomState {
+    return {
+      mode: mode.value,
+      opacity: opacity.value,
+      dialogOpacity: dialogOpacity.value,
+      dialogBlur: dialogBlur.value,
+      bg: bg.value,
+    };
   }
 
-  /** 把当前设置应用到 DOM（root data-theme + 透明度变量 + body 背景图） */
   function apply() {
-    const root = document.documentElement;
-    const body = document.body;
-    applyDialogVars(root);
-    if (mode.value === THEME_MODES.DEFAULT) {
-      root.removeAttribute('data-theme');
-      body.style.backgroundImage = '';
-      return;
-    }
-    root.dataset.theme = mode.value;
-    const o = Math.min(OPACITY_MAX, Math.max(OPACITY_MIN, opacity.value));
-    root.style.setProperty('--page-alpha', String(o));
-    root.style.setProperty('--card-alpha', String(Math.min(OPACITY_MAX, o + CARD_ALPHA_STEP)));
-    root.style.setProperty('--btn-alpha', String(Math.min(OPACITY_MAX, o + BTN_ALPHA_STEP)));
-    body.style.backgroundImage = bg.value ? `url("${bgUrl(bg.value)}")` : '';
-    body.style.backgroundSize = 'cover';
-    body.style.backgroundPosition = 'center';
-    body.style.backgroundRepeat = 'no-repeat';
-    body.style.backgroundAttachment = 'fixed';
+    applyThemeDom(domState());
   }
 
   async function persist() {
@@ -134,27 +105,19 @@ export const useSettingsStore = defineStore('settings', () => {
     await persist();
   }
 
-  /** 从本地导入图片到当前主题大类的背景列表，并立即选中 */
-  async function importBg(): Promise<string | null> {
-    if (mode.value === THEME_MODES.DEFAULT) return null;
-    const picked = await open({
-      title: '选择背景图片',
-      multiple: false,
-      filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'svg'] }],
-    });
-    if (!picked || Array.isArray(picked)) return null;
-    if (!customBgs.value.some((c) => c.path === picked)) {
-      customBgs.value.push({ path: picked, theme: mode.value });
+  /** 注册并选中一张已从系统选择器挑好的背景图；默认外观下忽略 */
+  async function addCustomBg(path: string) {
+    if (mode.value === THEME_MODES.DEFAULT) return;
+    if (!customBgs.value.some((c) => c.path === path)) {
+      customBgs.value.push({ path, theme: mode.value });
     }
-    bg.value = picked;
+    bg.value = path;
     apply();
     await persist();
-    return picked;
   }
 
   /** 移除自定义背景；若正在使用则回退到该类第一张内置图 */
   async function removeCustomBg(path: string) {
-    const entry = customBgs.value.find((c) => c.path === path);
     customBgs.value = customBgs.value.filter((c) => c.path !== path);
     if (bg.value === path) {
       bg.value =
@@ -162,7 +125,6 @@ export const useSettingsStore = defineStore('settings', () => {
           ? `${BUILTIN_BG_PREFIX}${BUILTIN_BGS[mode.value][0]}`
           : null;
     }
-    void entry;
     apply();
     await persist();
   }
@@ -181,7 +143,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setDialogOpacity,
     setDialogBlur,
     selectBg,
-    importBg,
+    addCustomBg,
     removeCustomBg,
   };
 });
