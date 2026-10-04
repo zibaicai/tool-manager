@@ -15,8 +15,8 @@
         "title": "Tool Manager",
         "width": 1200,
         "height": 800,
-        "minWidth": 900,
-        "minHeight": 600,
+        "minWidth": 600,
+        "minHeight": 400,
         "decorations": false,
         "backgroundColor": "#1e2229"
       }

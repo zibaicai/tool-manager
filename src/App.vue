@@ -5,6 +5,7 @@ import SideBar from './components/layout/SideBar.vue';
 import ContentArea from './components/layout/ContentArea.vue';
 import SettingsDialog from './components/layout/SettingsDialog.vue';
 import FeedbackHost from './components/common/FeedbackHost.vue';
+import WindowResizeEdges from './components/common/WindowResizeEdges.vue';
 import { useCategoryStore } from './stores/categories';
 import { useSettingsStore } from './stores/settings';
 
@@ -27,6 +28,7 @@ onMounted(() => {
     </div>
     <SettingsDialog v-if="showSettings" @close="showSettings = false" />
     <FeedbackHost />
+    <WindowResizeEdges />
   </div>
 </template>
 
