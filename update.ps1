@@ -1,4 +1,4 @@
-﻿# 工具管理系统一键更新脚本
+# 工具管理系统一键更新脚本
 # 流程：重新构建（含前端打包）-> 结束运行中的旧版 -> 覆盖安装目录 -> 重新启动
 # 用法：双击「更新工具管理系统.cmd」，或在项目根目录执行 powershell -ExecutionPolicy Bypass -File .\update.ps1
 
@@ -47,14 +47,13 @@ New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 Copy-Item $BuildExe $InstallExe -Force
 Write-Host "已更新：$InstallExe"
 
-# 同步菜单配置：项目 config\menu.json -> 用户配置目录
-# （安装版只读 %APPDATA% 下的配置；exe-tools.json 由应用自己维护，绝不同步以免覆盖录入数据）
-$menuSrc = Join-Path $ProjectRoot 'config\menu.json'
+# 初始化菜单配置：仅当用户配置目录还没有 menu.json 时写入干净模板，绝不覆盖已有配置
+# （menu.json 与 exe-tools.json 一样由应用自己维护，更新时覆盖会清掉用户在界面里配置的分类/目录）
 $menuDst = Join-Path $env:APPDATA 'com.toolmanager.app\menu.json'
-if (Test-Path $menuSrc) {
+if (-not (Test-Path $menuDst)) {
     New-Item -ItemType Directory -Force -Path (Split-Path $menuDst) | Out-Null
-    Copy-Item $menuSrc $menuDst -Force
-    Write-Host '已同步 menu.json 到用户配置目录'
+    '{ "scanRoot": null, "categories": [] }' | Set-Content -Path $menuDst -Encoding UTF8
+    Write-Host '已写入初始 menu.json'
 }
 
 # 5. 重新启动
