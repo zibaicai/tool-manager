@@ -81,4 +81,9 @@ stopAdmin: boolean,
 /**
  * 排序权重：数值越大在分类内越靠前；默认 0
  */
-weight: number, };
+weight: number, 
+/**
+ * CMD 类的脚本执行目录：工具目录下的相对子路径（如 bin），启动终端时作为工作目录；
+ * None/空表示使用工具目录本身。EXE 类恒为 None
+ */
+execDir: string | null, };

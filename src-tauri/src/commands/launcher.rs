@@ -25,11 +25,31 @@ pub fn launch_tool(
     path: String,
     args: Option<String>,
     admin: Option<bool>,
+    exec_dir: Option<String>,
 ) -> Result<(), String> {
     match tool_type.as_str() {
-        TOOL_CMD => open_cmd_window(&path),
+        TOOL_CMD => open_cmd_window(&resolve_exec_dir(&path, exec_dir.as_deref())),
         TOOL_EXE => launch_exe(&path, args.as_deref(), admin.unwrap_or(false)),
         other => Err(format!("未知工具类型: {}", other)),
+    }
+}
+
+/// 解析 CMD 工具的实际执行目录：exec_dir 为相对子路径时拼接到工具目录下，绝对路径直接使用；
+/// 未设置或解析结果不存在时回退工具目录本身（避免子目录被移动后工具无法启动）
+fn resolve_exec_dir(tool_path: &str, exec_dir: Option<&str>) -> String {
+    let Some(sub) = exec_dir.map(str::trim).filter(|s| !s.is_empty()) else {
+        return tool_path.to_string();
+    };
+    let p = Path::new(sub);
+    let resolved = if p.is_absolute() {
+        p.to_path_buf()
+    } else {
+        Path::new(tool_path).join(p)
+    };
+    if resolved.is_dir() {
+        resolved.to_string_lossy().to_string()
+    } else {
+        tool_path.to_string()
     }
 }
 

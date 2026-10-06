@@ -33,6 +33,9 @@ pub struct CmdToolOverride {
     /// 排序权重；None 表示默认 0（缺省字段不序列化，保持旧文件兼容）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<i32>,
+    /// 脚本执行目录：工具目录下的相对子路径（或绝对路径），打开终端时作为工作目录
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exec_dir: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -75,6 +78,9 @@ fn apply_override(tool: &mut Tool, overrides: &CmdToolOverrides) {
         }
         if let Some(w) = ov.weight {
             tool.weight = w;
+        }
+        if let Some(ed) = &ov.exec_dir {
+            tool.exec_dir = Some(ed.clone());
         }
     }
 }
@@ -180,6 +186,7 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
         stop_path: None,
         stop_admin: false,
         weight: 0,
+        exec_dir: None,
     })
 }
 
@@ -547,8 +554,18 @@ pub fn scan_all_cmd_tools(app: AppHandle) -> Result<Vec<Tool>, String> {
     Ok(scan_all(&menu, &overrides))
 }
 
+/// 判断 path 是否位于 root 之下（不含 root 本身）；分隔符与大小写不敏感（Windows 语义）
+fn is_under_root(path: &str, root: &str) -> bool {
+    let norm = |p: &str| p.trim_end_matches(['\\', '/']).to_lowercase();
+    let (p, r) = (norm(path), norm(root));
+    p.len() > r.len()
+        && p.starts_with(&r)
+        && (p.as_bytes()[r.len()] == b'\\' || p.as_bytes()[r.len()] == b'/')
+}
+
 /// 手动分配 CMD 工具到指定目录（分类）。category_id 传 None 表示清除分配、恢复自动归属。
-/// 目标为扫描型分类时要求工具目录位于其生效扫描根路径下；手动型分类无此限制。
+/// 目标为扫描型分类时要求工具目录位于其生效扫描根之下（支持任意深度，含一级）；
+/// 手动型分类无此限制。
 #[tauri::command]
 pub fn assign_cmd_tool(
     app: AppHandle,
@@ -569,16 +586,11 @@ pub fn assign_cmd_tool(
                 .iter()
                 .find(|c| &c.id == cid)
                 .ok_or("未找到目标目录")?;
-            // 扫描型分类要求工具物理上位于其生效扫描根之下；
+            // 扫描型分类要求工具物理上位于其生效扫描根之下（任意深度，含一级）；
             // 手动型分类（原 EXE 目录）仅作归属覆盖，不参与目录扫描，跳过根校验
             if cat.category_type == CAT_SCAN {
                 let root = effective_root(cat, &menu).ok_or("目标目录未配置扫描根路径")?;
-                let norm = |p: &str| p.trim_end_matches(['\\', '/']).to_lowercase();
-                let parent = Path::new(&path)
-                    .parent()
-                    .map(|p| p.to_string_lossy().to_string())
-                    .ok_or("工具路径无效")?;
-                if norm(&parent) != norm(&root) {
+                if !is_under_root(&path, &root) {
                     return Err(format!(
                         "该工具不在目标目录的扫描根（{}）下，无法分配",
                         root
@@ -594,7 +606,11 @@ pub fn assign_cmd_tool(
         }
     }
 
-    if ov.title.is_none() && ov.desc.is_none() && ov.category_id.is_none() {
+    if ov.title.is_none()
+        && ov.desc.is_none()
+        && ov.category_id.is_none()
+        && ov.weight.is_none()
+    {
         overrides.tools.remove(&id);
     } else {
         overrides.tools.insert(id.clone(), ov);
@@ -608,8 +624,8 @@ pub fn assign_cmd_tool(
     Ok(tool)
 }
 
-/// 更新 CMD 工具的标题/副标题（传空表示清除，标题恢复自动派生）。
-/// 需要传入工具的 path/categoryId 以便重新派生并返回最新 Tool。
+/// 更新 CMD 工具的标题/副标题/权重/脚本执行目录（标题传空表示清除，标题恢复自动派生；
+/// exec_dir 传空表示清除、恢复工具目录本身）。需要传入工具的 path/categoryId 以便重新派生并返回最新 Tool。
 #[tauri::command]
 pub fn update_cmd_tool(
     app: AppHandle,
@@ -619,10 +635,26 @@ pub fn update_cmd_tool(
     title: Option<String>,
     desc: Option<String>,
     weight: Option<i32>,
+    exec_dir: Option<String>,
 ) -> Result<Tool, String> {
     let title = title.filter(|t| !t.trim().is_empty()).map(|t| t.trim().to_string());
     let desc = desc.filter(|d| !d.trim().is_empty()).map(|d| d.trim().to_string());
     let weight = weight.filter(|w| *w != 0);
+    let exec_dir = exec_dir
+        .map(|s| s.trim().trim_matches('"').to_string())
+        .filter(|s| !s.is_empty());
+    // 相对子路径按工具目录拼出实际位置校验；绝对路径直接校验，避免保存无效值
+    if let Some(sub) = &exec_dir {
+        let p = Path::new(sub);
+        let resolved = if p.is_absolute() {
+            p.to_path_buf()
+        } else {
+            Path::new(&path).join(p)
+        };
+        if !resolved.is_dir() {
+            return Err(format!("脚本执行目录不存在: {}", resolved.display()));
+        }
+    }
 
     let menu_opt = crate::commands::config::load_menu_config(app.clone()).ok();
     let roots = menu_opt.as_ref().map(collect_roots).unwrap_or_default();
@@ -631,10 +663,16 @@ pub fn update_cmd_tool(
     ov.title = title;
     ov.desc = desc;
     ov.weight = weight;
+    ov.exec_dir = exec_dir;
     // 补记工具目录绝对路径，使仅改过标题的记录在将来 scanRoot 搬迁时也能按目录名迁移
     ov.dir_path.get_or_insert_with(|| path.clone());
-    // 保留已有的手动分配（category_id）；标题/副标题/分配/权重全空时整条删除（dir_path 不单独构成记录）
-    if ov.title.is_none() && ov.desc.is_none() && ov.category_id.is_none() && ov.weight.is_none() {
+    // 保留已有的手动分配（category_id）；标题/副标题/分配/权重/执行目录全空时整条删除（dir_path 不单独构成记录）
+    if ov.title.is_none()
+        && ov.desc.is_none()
+        && ov.category_id.is_none()
+        && ov.weight.is_none()
+        && ov.exec_dir.is_none()
+    {
         overrides.tools.remove(&id);
     } else {
         overrides.tools.insert(id.clone(), ov);
@@ -856,6 +894,7 @@ mod tests {
                 category_id: Some("framework-scan".into()),
                 dir_path: Some(nuclei_abs.clone()),
                 weight: None,
+                exec_dir: None,
             },
         );
         ov.tools.insert(
@@ -866,6 +905,7 @@ mod tests {
                 category_id: None,
                 dir_path: Some(js_abs.clone()),
                 weight: None,
+                exec_dir: None,
             },
         );
 
@@ -920,6 +960,7 @@ mod tests {
                 category_id: Some("c1".into()),
                 dir_path: Some(old_nuclei.clone()),
                 weight: None,
+                exec_dir: None,
             },
         );
         let orphan_old_id = make_id(&old_root.join("URLFinder").to_string_lossy());

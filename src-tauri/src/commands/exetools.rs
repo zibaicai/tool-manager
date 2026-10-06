@@ -120,6 +120,7 @@ fn enrich(entry: &ExeToolEntry) -> Tool {
         stop_path: entry.stop_path.clone(),
         stop_admin: entry.stop_admin,
         weight: entry.weight,
+        exec_dir: None,
     }
 }
 

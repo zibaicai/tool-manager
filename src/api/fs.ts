@@ -10,12 +10,13 @@ export function readTextFile(path: string): Promise<string> {
   return invoke('read_text_file', { path });
 }
 
-/** 更新 CMD 工具的标题/副标题/权重（传空串表示清除，标题恢复自动派生；weight 传 0 表示默认） */
+/** 更新 CMD 工具的标题/副标题/权重/脚本执行目录（传空串表示清除，标题恢复自动派生；weight 传 0 表示默认） */
 export function updateCmdTool(
   tool: Tool,
   title: string,
   desc: string,
   weight = 0,
+  execDir = '',
 ): Promise<Tool> {
   return invoke('update_cmd_tool', {
     id: tool.id,
@@ -24,6 +25,7 @@ export function updateCmdTool(
     title: title.trim() || null,
     desc: desc.trim() || null,
     weight: weight || null,
+    execDir: execDir.trim() || null,
   });
 }
 

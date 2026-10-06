@@ -18,6 +18,7 @@ const exeStore = useExeToolsStore();
 const title = ref(props.tool.title);
 const desc = ref(props.tool.desc ?? '');
 const weight = ref(props.tool.weight ?? 0);
+const execDir = ref(props.tool.execDir ?? '');
 const admin = ref(props.tool.admin ?? false);
 const stopPath = ref(props.tool.stopPath ?? '');
 const stopAdmin = ref(props.tool.stopAdmin ?? false);
@@ -44,7 +45,13 @@ async function submit() {
         weight.value || 0,
       );
     } else {
-      await cmdStore.updateCmd(props.tool.id, title.value, desc.value, weight.value || 0);
+      await cmdStore.updateCmd(
+        props.tool.id,
+        title.value,
+        desc.value,
+        weight.value || 0,
+        execDir.value,
+      );
       // 按"业务分组"比较归属是否变化：组内 scan/manual 成员切换不算用户改归属
       if (selectedGroupKey.value !== initialGroupKey.value) {
         const target =
@@ -101,6 +108,16 @@ async function submit() {
         @keyup.enter="submit"
       />
       <p class="tm-hint">数值越大在目录内越靠前；同权重保持原有顺序，默认 0</p>
+
+      <label class="tm-field-label">脚本执行目录（可选）</label>
+      <input
+        v-model="execDir"
+        class="tm-text-input"
+        type="text"
+        placeholder="如 bin 或 tools\run，留空使用工具目录本身"
+        @keyup.enter="submit"
+      />
+      <p class="tm-hint">脚本不在工具根目录时，填写其所在子目录（相对工具目录）；启动终端将直接进入该目录</p>
     </template>
 
     <p v-if="error" class="tm-error">{{ error }}</p>

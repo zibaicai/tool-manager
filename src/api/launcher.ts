@@ -4,7 +4,7 @@ import { TOOL_TYPES } from '../constants';
 
 /**
  * 启动工具：
- * - cmd：在工具根目录打开一个新的命令行窗口
+ * - cmd：在执行目录（execDir，未设置则为工具根目录）打开一个新的命令行窗口
  * - exe：运行指定的 exe（path 为 exe 绝对路径，工作目录为其所在目录）
  */
 export function launchTool(tool: Tool): Promise<void> {
@@ -13,6 +13,7 @@ export function launchTool(tool: Tool): Promise<void> {
     path: tool.path,
     args: tool.args ?? null,
     admin: tool.admin ?? false,
+    execDir: tool.execDir ?? null,
   });
 }
 

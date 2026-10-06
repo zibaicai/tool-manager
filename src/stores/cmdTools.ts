@@ -17,11 +17,17 @@ export const useCmdToolsStore = defineStore('cmdTools', () => {
     }
   }
 
-  /** 更新 CMD 工具标题/副标题/权重（weight 默认 0） */
-  async function updateCmd(id: string, title: string, desc: string, weight = 0): Promise<void> {
+  /** 更新 CMD 工具标题/副标题/权重/脚本执行目录（weight 默认 0，execDir 空 = 工具目录本身） */
+  async function updateCmd(
+    id: string,
+    title: string,
+    desc: string,
+    weight = 0,
+    execDir = '',
+  ): Promise<void> {
     const current = tools.value.find((t) => t.id === id);
     if (!current) return;
-    const tool = await updateCmdTool(current, title, desc, weight);
+    const tool = await updateCmdTool(current, title, desc, weight, execDir);
     const idx = tools.value.findIndex((t) => t.id === id);
     if (idx >= 0) tools.value[idx] = tool;
   }

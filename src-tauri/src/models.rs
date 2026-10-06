@@ -32,6 +32,10 @@ pub struct Tool {
     /// 排序权重：数值越大在分类内越靠前；默认 0
     #[serde(default)]
     pub weight: i32,
+    /// CMD 类的脚本执行目录：工具目录下的相对子路径（如 bin），启动终端时作为工作目录；
+    /// None/空表示使用工具目录本身。EXE 类恒为 None
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exec_dir: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ts_rs::TS)]
