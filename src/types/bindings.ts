@@ -77,4 +77,8 @@ stopPath: string | null,
 /**
  * 关闭脚本是否独立以管理员身份运行（EXE 类可选）；与启动用 admin 互不影响
  */
-stopAdmin: boolean, };
+stopAdmin: boolean, 
+/**
+ * 排序权重：数值越大在分类内越靠前；默认 0
+ */
+weight: number, };

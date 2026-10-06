@@ -99,10 +99,12 @@ export const useCategoryStore = defineStore('categories', () => {
     );
   });
 
-  /** 当前激活组下的全部工具（合并同组 scan + manual） */
+  /** 当前激活组下的全部工具（合并同组 scan + manual），按权重降序排列 */
   const activeTools = computed(() => {
     const ids = activeGroup.value?.ids ?? [activeCategoryId.value].filter(Boolean);
-    return allTools.value.filter((t) => ids.includes(t.categoryId));
+    return allTools.value
+      .filter((t) => ids.includes(t.categoryId))
+      .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0));
   });
 
   /** 侧边栏展示顺序：权重降序（越大越靠前），同权重保持配置文件原顺序（依赖稳定排序） */

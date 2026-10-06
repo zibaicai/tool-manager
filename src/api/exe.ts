@@ -15,6 +15,7 @@ export function addExeTool(
   admin?: boolean,
   stopPath?: string,
   stopAdmin?: boolean,
+  weight = 0,
 ): Promise<Tool> {
   return invoke('add_exe_tool', {
     exePath,
@@ -24,10 +25,11 @@ export function addExeTool(
     admin: admin ?? false,
     stopPath: stopPath?.trim() || null,
     stopAdmin: stopAdmin ?? false,
+    weight: weight || null,
   });
 }
 
-/** 更新已录入工具的标题/副标题/管理员启动/关闭脚本（标题传空串表示清除，恢复自动派生） */
+/** 更新已录入工具的标题/副标题/管理员启动/关闭脚本/权重（标题传空串表示清除；weight 传 0 表示默认） */
 export function updateExeTool(
   id: string,
   title: string,
@@ -35,6 +37,7 @@ export function updateExeTool(
   admin: boolean,
   stopPath: string,
   stopAdmin: boolean,
+  weight = 0,
 ): Promise<Tool> {
   return invoke('update_exe_tool', {
     id,
@@ -43,6 +46,7 @@ export function updateExeTool(
     admin,
     stopPath: stopPath.trim() || null,
     stopAdmin,
+    weight: weight || null,
   });
 }
 

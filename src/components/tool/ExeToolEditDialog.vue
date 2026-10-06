@@ -17,6 +17,7 @@ const exeStore = useExeToolsStore();
 
 const title = ref(props.tool.title);
 const desc = ref(props.tool.desc ?? '');
+const weight = ref(props.tool.weight ?? 0);
 const admin = ref(props.tool.admin ?? false);
 const stopPath = ref(props.tool.stopPath ?? '');
 const stopAdmin = ref(props.tool.stopAdmin ?? false);
@@ -40,9 +41,10 @@ async function submit() {
         admin.value,
         stopPath.value,
         stopAdmin.value,
+        weight.value || 0,
       );
     } else {
-      await cmdStore.updateCmd(props.tool.id, title.value, desc.value);
+      await cmdStore.updateCmd(props.tool.id, title.value, desc.value, weight.value || 0);
       // 按"业务分组"比较归属是否变化：组内 scan/manual 成员切换不算用户改归属
       if (selectedGroupKey.value !== initialGroupKey.value) {
         const target =
@@ -63,6 +65,7 @@ async function submit() {
       v-if="tool.type === TOOL_TYPES.EXE"
       v-model:title="title"
       v-model:desc="desc"
+      v-model:weight="weight"
       v-model:admin="admin"
       v-model:stop-path="stopPath"
       v-model:stop-admin="stopAdmin"
@@ -87,6 +90,17 @@ async function submit() {
         <option v-for="g in groups" :key="g.key" :value="g.key">{{ g.name }}</option>
       </select>
       <p class="tm-hint">可分配到任意业务目录；扫描型目录要求工具位于其扫描根下</p>
+
+      <label class="tm-field-label">排序权重</label>
+      <input
+        v-model.number="weight"
+        class="tm-text-input"
+        type="number"
+        step="1"
+        placeholder="0"
+        @keyup.enter="submit"
+      />
+      <p class="tm-hint">数值越大在目录内越靠前；同权重保持原有顺序，默认 0</p>
     </template>
 
     <p v-if="error" class="tm-error">{{ error }}</p>

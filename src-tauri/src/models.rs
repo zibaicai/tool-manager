@@ -29,6 +29,9 @@ pub struct Tool {
     /// 关闭脚本是否独立以管理员身份运行（EXE 类可选）；与启动用 admin 互不影响
     #[serde(default)]
     pub stop_admin: bool,
+    /// 排序权重：数值越大在分类内越靠前；默认 0
+    #[serde(default)]
+    pub weight: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ts_rs::TS)]

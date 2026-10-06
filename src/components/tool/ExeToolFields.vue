@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
- * EXE 工具的公共表单字段：标题 / 副标题 / 管理员启动 / 关闭脚本（含独立提权）。
+ * EXE 工具的公共表单字段：标题 / 副标题 / 权重 / 管理员启动 / 关闭脚本（含独立提权）。
  * 添加表单与编辑弹窗共用，保证字段与提示文案只有一份。
  * 启动路径（含浏览按钮）是添加场景独有内容，由父组件放在本组件之前。
  */
 const title = defineModel<string>('title', { required: true });
 const desc = defineModel<string>('desc', { required: true });
+const weight = defineModel<number>('weight', { default: 0 });
 const admin = defineModel<boolean>('admin', { required: true });
 const stopPath = defineModel<string>('stopPath', { required: true });
 const stopAdmin = defineModel<boolean>('stopAdmin', { required: true });
@@ -17,6 +18,10 @@ const stopAdmin = defineModel<boolean>('stopAdmin', { required: true });
 
   <label class="tm-field-label">副标题（可选）</label>
   <input v-model="desc" class="tm-text-input" type="text" placeholder="一句话说明工具用途" />
+
+  <label class="tm-field-label">排序权重</label>
+  <input v-model.number="weight" class="tm-text-input" type="number" step="1" placeholder="0" />
+  <p class="tm-hint">数值越大在目录内越靠前；同权重保持原有顺序，默认 0</p>
 
   <label class="tm-check-row">
     <input v-model="admin" type="checkbox" />

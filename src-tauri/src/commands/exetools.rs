@@ -31,6 +31,9 @@ pub struct ExeToolEntry {
     /// 关闭脚本是否独立提权运行（不继承启动用 admin）
     #[serde(default, skip_serializing_if = "is_false")]
     pub stop_admin: bool,
+    /// 排序权重：数值越大在分类内越靠前；默认 0
+    #[serde(default)]
+    pub weight: i32,
 }
 
 fn is_false(b: &bool) -> bool {
@@ -116,6 +119,7 @@ fn enrich(entry: &ExeToolEntry) -> Tool {
         admin: entry.admin,
         stop_path: entry.stop_path.clone(),
         stop_admin: entry.stop_admin,
+        weight: entry.weight,
     }
 }
 
@@ -166,6 +170,7 @@ pub fn add_exe_tool(
     admin: Option<bool>,
     stop_path: Option<String>,
     stop_admin: Option<bool>,
+    weight: Option<i32>,
 ) -> Result<Tool, String> {
     if exe_path.trim().is_empty() {
         return Err("请填写 exe 的绝对路径或启动命令".into());
@@ -209,6 +214,7 @@ pub fn add_exe_tool(
         admin: admin.unwrap_or(false),
         stop_path,
         stop_admin: stop_admin.unwrap_or(false),
+        weight: weight.unwrap_or(0),
     };
     cfg.tools.push(entry.clone());
     save_config(&app, &cfg)?;
@@ -231,7 +237,7 @@ fn validate_stop_path(stop_path: Option<String>) -> Result<Option<String>, Strin
     Ok(Some(p))
 }
 
-/// 更新已录入工具的标题/副标题/管理员启动标记/关闭脚本及其提权标记；标题传空字符串表示清除（恢复自动派生）
+/// 更新已录入工具的标题/副标题/管理员启动标记/关闭脚本及其提权标记/权重；标题传空字符串表示清除（恢复自动派生）
 #[tauri::command]
 pub fn update_exe_tool(
     app: AppHandle,
@@ -241,6 +247,7 @@ pub fn update_exe_tool(
     admin: Option<bool>,
     stop_path: Option<String>,
     stop_admin: Option<bool>,
+    weight: Option<i32>,
 ) -> Result<Tool, String> {
     let title = title.filter(|t| !t.trim().is_empty()).map(|t| t.trim().to_string());
     let desc = desc.filter(|d| !d.trim().is_empty()).map(|d| d.trim().to_string());
@@ -260,6 +267,9 @@ pub fn update_exe_tool(
     }
     if let Some(a) = stop_admin {
         entry.stop_admin = a;
+    }
+    if let Some(w) = weight {
+        entry.weight = w;
     }
     let updated = enrich(entry);
     save_config(&app, &cfg)?;

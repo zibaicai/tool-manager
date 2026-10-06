@@ -16,6 +16,7 @@ const categoryName = computed(() => categoryStore.activeGroup?.name ?? '当前�
 const exePath = ref('');
 const title = ref('');
 const desc = ref('');
+const weight = ref(0);
 const admin = ref(false);
 const stopPath = ref('');
 const stopAdmin = ref(false);
@@ -44,6 +45,7 @@ async function submit() {
       admin.value,
       stopPath.value,
       stopAdmin.value,
+      weight.value || 0,
     ),
   );
   if (ok) emit('close');
@@ -76,6 +78,7 @@ async function submit() {
     <ExeToolFields
       v-model:title="title"
       v-model:desc="desc"
+      v-model:weight="weight"
       v-model:admin="admin"
       v-model:stop-path="stopPath"
       v-model:stop-admin="stopAdmin"

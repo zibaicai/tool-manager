@@ -25,6 +25,7 @@ export const useExeToolsStore = defineStore('exeTools', () => {
     admin?: boolean,
     stopPath?: string,
     stopAdmin?: boolean,
+    weight = 0,
   ): Promise<void> {
     const tool = await addExeTool(
       exePath,
@@ -34,13 +35,14 @@ export const useExeToolsStore = defineStore('exeTools', () => {
       admin,
       stopPath,
       stopAdmin,
+      weight,
     );
     const idx = tools.value.findIndex((t) => t.id === tool.id);
     if (idx >= 0) tools.value[idx] = tool;
     else tools.value.push(tool);
   }
 
-  /** 更新 EXE 工具标题/副标题/提权标记/关闭脚本 */
+  /** 更新 EXE 工具标题/副标题/提权标记/关闭脚本/权重（weight 默认 0） */
   async function updateExe(
     id: string,
     title: string,
@@ -48,8 +50,9 @@ export const useExeToolsStore = defineStore('exeTools', () => {
     admin: boolean,
     stopPath: string,
     stopAdmin: boolean,
+    weight = 0,
   ): Promise<void> {
-    const tool = await updateExeTool(id, title, desc, admin, stopPath, stopAdmin);
+    const tool = await updateExeTool(id, title, desc, admin, stopPath, stopAdmin, weight);
     const idx = tools.value.findIndex((t) => t.id === id);
     if (idx >= 0) tools.value[idx] = tool;
   }

@@ -1,4 +1,4 @@
-use crate::commands::config::ensure_config_dir;
+﻿use crate::commands::config::ensure_config_dir;
 use crate::constants::{
     strip_bom, CAT_SCAN, CMD_TOOLS_FILE, ICON_FILE, OPS_FILE, README_FILE, TOOL_CMD,
 };
@@ -30,6 +30,9 @@ pub struct CmdToolOverride {
     /// 分配时记录的工具目录路径，用于目标分类扫描时补入该工具，也作为搬迁后重定位的依据
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dir_path: Option<String>,
+    /// 排序权重；None 表示默认 0（缺省字段不序列化，保持旧文件兼容）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -69,6 +72,9 @@ fn apply_override(tool: &mut Tool, overrides: &CmdToolOverrides) {
         tool.desc = ov.desc.clone();
         if let Some(cid) = &ov.category_id {
             tool.category_id = cid.clone();
+        }
+        if let Some(w) = ov.weight {
+            tool.weight = w;
         }
     }
 }
@@ -173,6 +179,7 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
         admin: false,
         stop_path: None,
         stop_admin: false,
+        weight: 0,
     })
 }
 
@@ -611,9 +618,11 @@ pub fn update_cmd_tool(
     category_id: String,
     title: Option<String>,
     desc: Option<String>,
+    weight: Option<i32>,
 ) -> Result<Tool, String> {
     let title = title.filter(|t| !t.trim().is_empty()).map(|t| t.trim().to_string());
     let desc = desc.filter(|d| !d.trim().is_empty()).map(|d| d.trim().to_string());
+    let weight = weight.filter(|w| *w != 0);
 
     let menu_opt = crate::commands::config::load_menu_config(app.clone()).ok();
     let roots = menu_opt.as_ref().map(collect_roots).unwrap_or_default();
@@ -621,10 +630,11 @@ pub fn update_cmd_tool(
     let mut ov = overrides.tools.get(&id).cloned().unwrap_or_default();
     ov.title = title;
     ov.desc = desc;
+    ov.weight = weight;
     // 补记工具目录绝对路径，使仅改过标题的记录在将来 scanRoot 搬迁时也能按目录名迁移
     ov.dir_path.get_or_insert_with(|| path.clone());
-    // 保留已有的手动分配（category_id）；标题/副标题/分配全空时整条删除（dir_path 不单独构成记录）
-    if ov.title.is_none() && ov.desc.is_none() && ov.category_id.is_none() {
+    // 保留已有的手动分配（category_id）；标题/副标题/分配/权重全空时整条删除（dir_path 不单独构成记录）
+    if ov.title.is_none() && ov.desc.is_none() && ov.category_id.is_none() && ov.weight.is_none() {
         overrides.tools.remove(&id);
     } else {
         overrides.tools.insert(id.clone(), ov);
@@ -845,6 +855,7 @@ mod tests {
                 desc: None,
                 category_id: Some("framework-scan".into()),
                 dir_path: Some(nuclei_abs.clone()),
+                weight: None,
             },
         );
         ov.tools.insert(
@@ -853,7 +864,8 @@ mod tests {
                 title: Some("JSFinder".into()),
                 desc: Some("666".into()),
                 category_id: None,
-                dir_path: None,
+                dir_path: Some(js_abs.clone()),
+                weight: None,
             },
         );
 
@@ -907,6 +919,7 @@ mod tests {
                 desc: None,
                 category_id: Some("c1".into()),
                 dir_path: Some(old_nuclei.clone()),
+                weight: None,
             },
         );
         let orphan_old_id = make_id(&old_root.join("URLFinder").to_string_lossy());
