@@ -19,13 +19,14 @@ const showTheme = ref(false);
     </div>
     <nav class="menu">
       <div
-        v-for="cat in store.sortedCategories"
-        :key="cat.id"
+        v-for="group in store.sortedCategoryGroups"
+        :key="group.key"
         class="menu-item"
-        :class="{ active: cat.id === store.activeCategoryId }"
-        @click="store.setActiveCategory(cat.id)"
+        :class="{ active: group.ids.includes(store.activeCategoryId) }"
+        @click="store.setActiveCategory(group.primaryId)"
       >
-        {{ cat.name }}
+        {{ group.name }}
+        <span class="count">{{ store.toolsOfGroup(group).length }}</span>
       </div>
     </nav>
     <div class="footer">
@@ -105,6 +106,16 @@ const showTheme = ref(false);
   cursor: pointer;
   border-left: 3px solid transparent;
   transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.menu-item .count {
+  font-size: 11px;
+  color: var(--text-sub);
+  background: var(--icon-btn-bg, #262b34);
+  padding: 1px 6px;
+  border-radius: 8px;
 }
 .menu-item:hover {
   background: var(--menu-hover, #262b34);

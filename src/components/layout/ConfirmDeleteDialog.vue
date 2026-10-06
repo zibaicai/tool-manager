@@ -10,11 +10,31 @@ const emit = defineEmits<{ close: [] }>();
 const store = useCategoryStore();
 
 const cat = computed(() => store.categories.find((c) => c.id === props.categoryId));
-const toolCount = computed(() => store.toolsOf(props.categoryId).length);
+/** 当前分类所在展示组（含同名 scan + manual 合并） */
+const group = computed(() =>
+  store.sortedCategoryGroups.find((g) => g.ids.includes(props.categoryId)),
+);
+const memberCats = computed(() =>
+  (group.value?.ids ?? [props.categoryId])
+    .map((id) => store.categories.find((c) => c.id === id))
+    .filter(Boolean),
+);
+const toolCount = computed(() => store.toolsOfGroup(group.value ?? { ids: [props.categoryId] } as any).length);
+const hasManualWithTools = computed(() =>
+  memberCats.value.some(
+    (c: any) => c?.type === CATEGORY_TYPES.MANUAL && store.toolsOf(c.id).length > 0,
+  ),
+);
 const { submitting, error, run } = useAsyncSubmit();
 
 async function confirmDelete() {
-  if (await run(() => store.deleteCat(props.categoryId))) emit('close');
+  const ids = group.value?.ids ?? [props.categoryId];
+  if (
+    await run(async () => {
+      for (const id of ids) await store.deleteCat(id);
+    })
+  )
+    emit('close');
 }
 </script>
 
@@ -27,13 +47,19 @@ async function confirmDelete() {
     @close="emit('close')"
   >
     <p class="lead">
-      确定删除目录 <strong class="cat-name">「{{ cat?.name }}」</strong> 吗？
+      确定删除目录 <strong class="cat-name">「{{ group?.name ?? cat?.name }}」</strong> 吗？
     </p>
     <p class="meta">
-      类型：{{ cat?.type === CATEGORY_TYPES.MANUAL ? 'EXE 手动录入' : 'CMD 自动扫描' }}
+      <template v-if="(group?.ids?.length ?? 0) > 1">
+        该目录由 {{ group!.ids.length }} 个分类合并显示，将一并删除：
+        {{ memberCats.map((c: any) => c?.name).join(' + ') }}
+      </template>
+      <template v-else>
+        类型：{{ cat?.type === CATEGORY_TYPES.MANUAL ? 'EXE 手动录入' : 'CMD 自动扫描' }}
+      </template>
       <span v-if="toolCount > 0"> · 当前含 {{ toolCount }} 个工具</span>
     </p>
-    <p v-if="cat?.type === CATEGORY_TYPES.MANUAL && toolCount > 0" class="warn">
+    <p v-if="hasManualWithTools" class="warn">
       删除后其下 EXE 录入将不再显示（数据保留在 exe-tools.json，重新录入可恢复）。
     </p>
     <p v-if="error" class="tm-error">{{ error }}</p>

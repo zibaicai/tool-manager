@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useCategoryStore } from '../../stores/categories';
 import { useExeToolsStore } from '../../stores/exeTools';
@@ -11,11 +11,7 @@ const emit = defineEmits<{ close: [] }>();
 const categoryStore = useCategoryStore();
 const exeStore = useExeToolsStore();
 
-const categoryName = computed(
-  () =>
-    categoryStore.categories.find((c) => c.id === categoryStore.activeCategoryId)?.name ??
-    '当前分类',
-);
+const categoryName = computed(() => categoryStore.activeGroup?.name ?? '当前分类');
 
 const exePath = ref('');
 const title = ref('');
@@ -42,7 +38,7 @@ async function submit() {
   const ok = await run(() =>
     exeStore.addExe(
       exePath.value.trim(),
-      categoryStore.activeCategoryId,
+      categoryStore.exeTargetCategoryId,
       title.value,
       desc.value,
       admin.value,

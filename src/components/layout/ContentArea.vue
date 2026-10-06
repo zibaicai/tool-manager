@@ -1,31 +1,25 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useCategoryStore } from '../../stores/categories';
-import { CATEGORY_TYPES } from '../../constants';
 import ToolGrid from '../tool/ToolGrid.vue';
 import ExeToolForm from '../tool/ExeToolForm.vue';
 
 const store = useCategoryStore();
 const showForm = ref(false);
-
-const activeCategory = computed(() =>
-  store.categories.find((c) => c.id === store.activeCategoryId),
-);
-const isManual = computed(() => activeCategory.value?.type === CATEGORY_TYPES.MANUAL);
 </script>
 
 <template>
   <main class="content">
     <header class="header">
-      <h2>{{ activeCategory?.name || '' }}</h2>
+      <h2>{{ store.activeGroup?.name || '' }}</h2>
       <span class="count">{{ store.activeTools.length }} 个工具</span>
-      <button v-if="isManual" class="add-btn" @click="showForm = true">＋ 添加 EXE 工具</button>
+      <button v-if="store.activeGroup" class="add-btn" @click="showForm = true">＋ 添加 EXE 工具</button>
     </header>
 
     <div v-if="store.loading" class="state">加载中...</div>
     <div v-else-if="store.error" class="state error">{{ store.error }}</div>
     <div v-else-if="store.activeTools.length === 0" class="state">
-      {{ isManual ? '暂无 EXE 工具，点击右上角添加' : '该分类暂无工具' }}
+      该分类暂无工具，可点击右上角添加 EXE 工具
     </div>
     <ToolGrid v-else :tools="store.activeTools" />
 

@@ -66,7 +66,7 @@ async function openDir() {
       <div class="header-right">
         <button class="edit-btn" title="编辑标题/副标题" @click="showEdit = true">✎</button>
         <button v-if="tool.type === TOOL_TYPES.EXE" class="remove-btn" title="从列表移除" @click="remove">✕</button>
-        <div class="type-tag">{{ tool.type.toUpperCase() }}</div>
+        <div class="type-tag" :class="tool.type">{{ tool.type.toUpperCase() }}</div>
       </div>
     </div>
     <div v-if="tool.desc" class="desc" :title="tool.desc">{{ tool.desc }}</div>
@@ -128,6 +128,14 @@ async function openDir() {
   background: #eef4ff;
   color: var(--primary);
   flex-shrink: 0;
+}
+.type-tag.cmd {
+  background: #eef4ff;
+  color: #2f8cff;
+}
+.type-tag.exe {
+  background: #fff2e8;
+  color: #fa8c16;
 }
 .remove-btn,
 .edit-btn {
