@@ -14,12 +14,15 @@ const cat = computed(() => store.categories.find((c) => c.id === props.categoryI
 const group = computed(() =>
   store.sortedCategoryGroups.find((g) => g.ids.includes(props.categoryId)),
 );
+const memberIds = computed(() => group.value?.ids ?? [props.categoryId]);
 const memberCats = computed(() =>
-  (group.value?.ids ?? [props.categoryId])
+  memberIds.value
     .map((id) => store.categories.find((c) => c.id === id))
     .filter(Boolean),
 );
-const toolCount = computed(() => store.toolsOfGroup(group.value ?? { ids: [props.categoryId] } as any).length);
+const toolCount = computed(() =>
+  memberIds.value.reduce((n, id) => n + store.toolsOf(id).length, 0),
+);
 const hasManualWithTools = computed(() =>
   memberCats.value.some(
     (c: any) => c?.type === CATEGORY_TYPES.MANUAL && store.toolsOf(c.id).length > 0,

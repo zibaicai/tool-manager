@@ -432,15 +432,9 @@ fn scan_category(
     });
 
     // 手动分配到本分类但未被 dirs 名单覆盖的工具，按记录的目录路径补入
-    for (id, ov) in &overrides.tools {
-        if ov.category_id.as_deref() == Some(cat.id.as_str())
-            && !tools.iter().any(|t| &t.id == id)
-        {
-            if let Some(dp) = &ov.dir_path {
-                if let Some(tool) = inspect_dir(Path::new(dp), &cat.id, roots) {
-                    tools.push(tool);
-                }
-            }
+    for tool in collect_assigned(overrides, roots, cat) {
+        if !tools.iter().any(|t| t.id == tool.id) {
+            tools.push(tool);
         }
     }
 
@@ -479,6 +473,29 @@ fn scan_category(
     tools
 }
 
+/// 收集通过覆盖记录手动分配到指定分类的 CMD 工具（按记录的目录路径补入）。
+/// scan 与 manual 两类分类通用：manual 分类不扫描目录，这是其获得 CMD 工具的唯一途径。
+/// 注意：返回的工具尚未应用覆盖（标题/副标题），由调用方统一 apply_override
+fn collect_assigned(
+    overrides: &CmdToolOverrides,
+    roots: &[PathBuf],
+    cat: &Category,
+) -> Vec<Tool> {
+    let mut tools: Vec<Tool> = Vec::new();
+    for (id, ov) in &overrides.tools {
+        if ov.category_id.as_deref() == Some(cat.id.as_str()) {
+            if let Some(dp) = &ov.dir_path {
+                if let Some(tool) = inspect_dir(Path::new(dp), &cat.id, roots) {
+                    if !tools.iter().any(|t| &t.id == id) {
+                        tools.push(tool);
+                    }
+                }
+            }
+        }
+    }
+    tools
+}
+
 /// 按菜单扫描全部 scan 分类（纯逻辑，无 IO 配置读取；菜单/覆盖由命令层统一加载一次）
 fn scan_all(menu: &MenuConfig, overrides: &CmdToolOverrides) -> Vec<Tool> {
     let roots = collect_roots(menu);
@@ -492,6 +509,12 @@ fn scan_all(menu: &MenuConfig, overrides: &CmdToolOverrides) -> Vec<Tool> {
     let mut all = Vec::new();
     for cat in &menu.categories {
         if cat.category_type != CAT_SCAN {
+            // 手动型分类不扫描目录，仅收集手动分配过来的 CMD 工具
+            let mut assigned = collect_assigned(overrides, &roots, cat);
+            for t in &mut assigned {
+                apply_override(t, overrides);
+            }
+            all.extend(assigned);
             continue;
         }
         let is_first = first_scan_id.as_deref() == Some(cat.id.as_str());
@@ -518,7 +541,7 @@ pub fn scan_all_cmd_tools(app: AppHandle) -> Result<Vec<Tool>, String> {
 }
 
 /// 手动分配 CMD 工具到指定目录（分类）。category_id 传 None 表示清除分配、恢复自动归属。
-/// 要求工具目录位于目标分类的生效扫描根路径下，否则拒绝。
+/// 目标为扫描型分类时要求工具目录位于其生效扫描根路径下；手动型分类无此限制。
 #[tauri::command]
 pub fn assign_cmd_tool(
     app: AppHandle,
@@ -539,20 +562,21 @@ pub fn assign_cmd_tool(
                 .iter()
                 .find(|c| &c.id == cid)
                 .ok_or("未找到目标目录")?;
-            if cat.category_type != CAT_SCAN {
-                return Err("目标目录不是 CMD 自动扫描类型".into());
-            }
-            let root = effective_root(cat, &menu).ok_or("目标目录未配置扫描根路径")?;
-            let norm = |p: &str| p.trim_end_matches(['\\', '/']).to_lowercase();
-            let parent = Path::new(&path)
-                .parent()
-                .map(|p| p.to_string_lossy().to_string())
-                .ok_or("工具路径无效")?;
-            if norm(&parent) != norm(&root) {
-                return Err(format!(
-                    "该工具不在目标目录的扫描根（{}）下，无法分配",
-                    root
-                ));
+            // 扫描型分类要求工具物理上位于其生效扫描根之下；
+            // 手动型分类（原 EXE 目录）仅作归属覆盖，不参与目录扫描，跳过根校验
+            if cat.category_type == CAT_SCAN {
+                let root = effective_root(cat, &menu).ok_or("目标目录未配置扫描根路径")?;
+                let norm = |p: &str| p.trim_end_matches(['\\', '/']).to_lowercase();
+                let parent = Path::new(&path)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .ok_or("工具路径无效")?;
+                if norm(&parent) != norm(&root) {
+                    return Err(format!(
+                        "该工具不在目标目录的扫描根（{}）下，无法分配",
+                        root
+                    ));
+                }
             }
             ov.category_id = Some(cid.clone());
             ov.dir_path = Some(path.clone());

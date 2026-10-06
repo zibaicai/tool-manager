@@ -12,19 +12,14 @@ const store = useCategoryStore();
 
 const activeCat = store.categories.find((c) => c.id === store.activeCategoryId);
 const name = ref(props.mode === 'rename' ? (activeCat?.name ?? '') : '');
-const catType = ref<CategoryType>(
-  props.mode === 'rename'
-    ? (activeCat?.type === CATEGORY_TYPES.SCAN ? CATEGORY_TYPES.SCAN : CATEGORY_TYPES.MANUAL)
-    : CATEGORY_TYPES.MANUAL,
-);
+/** 新建目录统一为扫描型：扫描型为超集，既可自动扫描，也可接收 EXE 录入与手动分配 */
+const catType = ref<CategoryType>(CATEGORY_TYPES.SCAN);
 const weight = ref<number>(
   props.mode === 'rename' ? (activeCat?.weight ?? DEFAULT_WEIGHT) : DEFAULT_WEIGHT,
 );
-/** 分类级扫描目录；仅 scan 类型编辑时展示，空串表示回退顶层 scanRoot */
+/** 分类级扫描目录；编辑任意目录时均展示（方案 A：所有目录统一为 scan 超集属性），空串表示回退顶层 scanRoot */
 const scanPath = ref(props.mode === 'rename' ? (activeCat?.scanPath ?? '') : '');
-const showScanPath = computed(
-  () => props.mode === 'rename' && catType.value === CATEGORY_TYPES.SCAN,
-);
+const showScanPath = computed(() => props.mode === 'rename');
 const { submitting, error, run } = useAsyncSubmit();
 
 /** 调出系统目录选择框 */
@@ -77,16 +72,7 @@ async function submit() {
     />
     <p class="tm-hint">数值越大目录越靠上；权重相同的目录按创建先后排列，默认 0</p>
 
-    <template v-if="mode === 'add'">
-      <label class="tm-field-label">目录类型</label>
-      <select v-model="catType" class="tm-text-input">
-        <option :value="CATEGORY_TYPES.MANUAL">EXE 手动录入</option>
-        <option :value="CATEGORY_TYPES.SCAN">CMD 自动扫描（扫描 scanRoot 汇总目录）</option>
-      </select>
-      <p class="tm-hint">新建的 CMD 目录初始为空，请在工具卡片的编辑菜单中通过「所属目录」分配工具</p>
-    </template>
-
-    <template v-else-if="showScanPath">
+    <template v-if="showScanPath">
       <label class="tm-field-label">分类专属扫描目录（可选）</label>
       <div class="tm-path-row">
         <input
