@@ -12,7 +12,7 @@ import {
 const maximized = ref(false);
 let unlisten: (() => void) | null = null;
 
-const emit = defineEmits<{ settings: [] }>();
+const emit = defineEmits<{ settings: []; search: [] }>();
 
 onMounted(async () => {
   maximized.value = await isMaximized();
@@ -46,6 +46,12 @@ async function onDblClick(e: MouseEvent) {
       <span class="name">Tool Manager</span>
     </div>
     <div class="controls">
+      <button class="ctrl search" title="搜索工具 (Ctrl+K)" @click="emit('search')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+      </button>
       <button class="ctrl settings" title="设置" @click="emit('settings')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3" />
@@ -136,10 +142,12 @@ async function onDblClick(e: MouseEvent) {
 .ctrl:hover {
   background: var(--titlebar-hover);
 }
-.ctrl.settings {
+.ctrl.settings,
+.ctrl.search {
   width: 30px;
 }
-.ctrl.settings:hover {
+.ctrl.settings:hover,
+.ctrl.search:hover {
   color: var(--primary, #2f8cff);
 }
 .ctrl.danger:hover {
