@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useCategoryStore } from '../../stores/categories';
 import { useAsyncSubmit } from '../../composables/useAsyncSubmit';
+import { alert } from '../../composables/useFeedback';
 import BaseDialog from '../common/BaseDialog.vue';
 
 const emit = defineEmits<{ close: [] }>();
@@ -24,6 +26,15 @@ async function browse() {
 
 async function save() {
   if (await run(() => store.saveScanRoot(scanRoot.value))) emit('close');
+}
+
+/** 在系统默认浏览器中打开在线使用说明书 */
+async function openManual() {
+  try {
+    await invoke('open_manual');
+  } catch (e) {
+    await alert('打开失败: ' + e);
+  }
 }
 </script>
 
@@ -47,6 +58,13 @@ async function save() {
       CMD 类工具统一存放的汇总目录；未单独配置扫描目录的分类都会在此目录下扫描。
       保存后自动重新扫描，清空后保存可取消该设置。
     </p>
+
+    <div class="manual-section">
+      <label class="tm-field-label">使用说明书</label>
+      <button class="manual-link" type="button" @click="openManual">查看使用说明 ↗</button>
+      <p class="tm-hint">在浏览器中打开完整说明书（在线文档，需要网络）</p>
+    </div>
+
     <p v-if="error" class="tm-error">{{ error }}</p>
 
     <template #footer>
@@ -57,3 +75,24 @@ async function save() {
     </template>
   </BaseDialog>
 </template>
+
+<style scoped>
+.manual-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border, #333);
+}
+.manual-link {
+  display: inline-block;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  color: var(--primary, #4f8cff);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.manual-link:hover {
+  filter: brightness(1.2);
+}
+</style>

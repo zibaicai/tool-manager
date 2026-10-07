@@ -34,6 +34,17 @@ pub fn launch_tool(
     }
 }
 
+/// 使用说明书在线地址（GitHub 仓库内渲染后的 USER_MANUAL.md）；写死常量，避免任意 URL 注入面
+const MANUAL_URL: &str = "https://github.com/zibaicai/tool-manager/blob/main/USER_MANUAL.md";
+
+/// 在系统默认浏览器中打开使用说明书（在线文档）
+#[tauri::command]
+pub fn open_manual(app: AppHandle) -> Result<(), String> {
+    app.opener()
+        .open_url(MANUAL_URL, None::<&str>)
+        .map_err(|e| format!("打开浏览器失败: {}", e))
+}
+
 /// 解析 CMD 工具的实际执行目录：exec_dir 为相对子路径时拼接到工具目录下，绝对路径直接使用；
 /// 未设置或解析结果不存在时回退工具目录本身（避免子目录被移动后工具无法启动）
 fn resolve_exec_dir(tool_path: &str, exec_dir: Option<&str>) -> String {

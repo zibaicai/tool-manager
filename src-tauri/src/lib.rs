@@ -137,6 +137,7 @@ pub fn run() {
             scanner::scan_all_cmd_tools,
             scanner::update_cmd_tool,
             scanner::assign_cmd_tool,
+            launcher::open_manual,
             scanner::read_text_file,
             config::load_menu_config,
             config::add_category,
