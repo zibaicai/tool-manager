@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 import type { Tool } from '../types';
 
 /** 一次性扫描全部 CMD 工具分类（生效扫描根由后端按菜单统一解析，前端不再逐分类调用） */
@@ -32,4 +33,24 @@ export function updateCmdTool(
 /** 手动分配 CMD 工具到指定目录（分类）；categoryId 传 null 恢复自动归属 */
 export function assignCmdTool(tool: Tool, categoryId: string | null): Promise<Tool> {
   return invoke('assign_cmd_tool', { id: tool.id, path: tool.path, categoryId });
+}
+
+/** 注册外部目录为 CMD 工具（如天狐工具箱等第三方工具源），分配到指定分类。
+ *  目录需含 .exe/.bat/.ps1/.py 等可执行文件 */
+export function registerCmdTool(
+  path: string,
+  categoryId: string,
+  weight = 0,
+): Promise<Tool> {
+  return invoke('register_cmd_tool', {
+    path,
+    categoryId,
+    weight: weight || null,
+  });
+}
+
+/** 弹出系统目录选择框，返回所选目录的绝对路径（取消时返回 null） */
+export async function pickDir(): Promise<string | null> {
+  const selected = await open({ directory: true, multiple: false });
+  return typeof selected === 'string' ? selected : null;
 }

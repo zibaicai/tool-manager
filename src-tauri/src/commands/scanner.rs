@@ -120,7 +120,9 @@ fn collect_roots(menu: &MenuConfig) -> Vec<PathBuf> {
 
 /// CMD 工具的稳定标识 key：相对任一扫描根的相对路径（当前模型工具恒为一级子目录，
 /// 即目录名），分隔符统一为 `/`。整体搬迁 scanRoot（换盘/换父目录）后 key 不变；
-/// 匹配不到任何扫描根时退化为目录名，效果与一级相对路径一致
+/// 匹配不到任何扫描根时（外部目录工具，如天狐工具箱等第三方工具源），
+/// 用绝对路径归一化（小写 + 去尾部斜杠）作为 key——外部目录由第三方管理，
+/// 不会像 scanRoot 那样被用户随意移动，绝对路径哈希可接受
 fn stable_key(dir: &Path, roots: &[PathBuf]) -> String {
     let rel = roots
         .iter()
@@ -128,9 +130,9 @@ fn stable_key(dir: &Path, roots: &[PathBuf]) -> String {
         .min_by_key(|p| p.as_os_str().len())
         .map(|p| p.to_string_lossy().replace('\\', "/"));
     rel.unwrap_or_else(|| {
-        dir.file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default()
+        dir.to_string_lossy()
+            .trim_end_matches(['\\', '/'])
+            .to_lowercase()
     })
 }
 
@@ -620,6 +622,62 @@ pub fn assign_cmd_tool(
     let view_cat = category_id.clone().unwrap_or_default();
     let mut tool = inspect_dir(Path::new(&path), &view_cat, &roots)
         .ok_or(format!("目录不存在: {}", path))?;
+    apply_override(&mut tool, &overrides);
+    Ok(tool)
+}
+
+/// 注册外部目录为 CMD 工具并分配到指定分类。用于把不在扫描根下的工具目录
+/// （如天狐工具箱等第三方工具源）纳入管理。id 由 stable_key 的 fallback 分支
+/// （绝对路径归一化哈希）派生，与 collect_assigned 调 inspect_dir 重新解析时一致。
+/// 校验：目录存在 + 目录内含可执行文件（.exe/.bat/.ps1/.py 等），避免注册空目录
+#[tauri::command]
+pub fn register_cmd_tool(
+    app: AppHandle,
+    path: String,
+    category_id: String,
+    weight: Option<i32>,
+) -> Result<Tool, String> {
+    let dir = Path::new(&path);
+    if !dir.is_dir() {
+        return Err(format!("目录不存在: {}", path));
+    }
+    const CMD_ENTRY_EXTS: &[&str] = &["exe", "bat", "cmd", "ps1", "py", "sh"];
+    let has_entry = fs::read_dir(dir)
+        .map(|it| {
+            it.flatten().any(|e| {
+                e.path()
+                    .extension()
+                    .and_then(|x| x.to_str())
+                    .map(|x| CMD_ENTRY_EXTS.contains(&x.to_lowercase().as_str()))
+                    .unwrap_or(false)
+            })
+        })
+        .unwrap_or(false);
+    if !has_entry {
+        return Err("该目录下未找到可执行文件（.exe/.bat/.ps1/.py 等）".into());
+    }
+
+    let menu = crate::commands::config::load_menu_config(app.clone())?;
+    let cat = menu
+        .categories
+        .iter()
+        .find(|c| c.id == category_id)
+        .ok_or("未找到目标目录")?;
+    let roots = collect_roots(&menu);
+
+    let mut tool = inspect_dir(dir, &cat.id, &roots)
+        .ok_or(format!("无法解析目录: {}", path))?;
+
+    let mut overrides = load_overrides_migrated(&app, Some(&menu));
+    let mut ov = overrides.tools.get(&tool.id).cloned().unwrap_or_default();
+    ov.category_id = Some(category_id.clone());
+    ov.dir_path = Some(path.clone());
+    if let Some(w) = weight {
+        ov.weight = Some(w);
+    }
+    overrides.tools.insert(tool.id.clone(), ov);
+    save_overrides(&app, &overrides)?;
+
     apply_override(&mut tool, &overrides);
     Ok(tool)
 }
