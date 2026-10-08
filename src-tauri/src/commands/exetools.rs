@@ -121,6 +121,10 @@ fn enrich(entry: &ExeToolEntry) -> Tool {
         stop_admin: entry.stop_admin,
         weight: entry.weight,
         exec_dir: None,
+        launch_mode: None,
+        launch_command: None,
+        env: None,
+        external: false,
     }
 }
 

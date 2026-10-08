@@ -138,6 +138,7 @@ pub fn run() {
             scanner::update_cmd_tool,
             scanner::assign_cmd_tool,
             scanner::register_cmd_tool,
+            scanner::remove_cmd_tool,
             launcher::open_manual,
             scanner::read_text_file,
             config::load_menu_config,

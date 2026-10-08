@@ -22,6 +22,22 @@ const execDir = ref(props.tool.execDir ?? '');
 const admin = ref(props.tool.admin ?? false);
 const stopPath = ref(props.tool.stopPath ?? '');
 const stopAdmin = ref(props.tool.stopAdmin ?? false);
+const launchMode = ref(props.tool.launchMode ?? 'terminal');
+const launchCommand = ref(props.tool.launchCommand ?? '');
+const envText = ref(
+  props.tool.env ? Object.entries(props.tool.env).map(([k, v]) => `${k}=${v}`).join('\n') : '',
+);
+
+function parseEnv(text: string): Record<string, string> | null {
+  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  if (lines.length === 0) return null;
+  const map: Record<string, string> = {};
+  for (const line of lines) {
+    const idx = line.indexOf('=');
+    if (idx > 0) map[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+  }
+  return Object.keys(map).length > 0 ? map : null;
+}
 
 /** 全部业务分组（侧栏所见即下拉所得，不再区分 scan/manual） */
 const groups = computed(() => categoryStore.sortedCategoryGroups);
@@ -51,6 +67,9 @@ async function submit() {
         desc.value,
         weight.value || 0,
         execDir.value,
+        launchMode.value,
+        launchCommand.value,
+        parseEnv(envText.value),
       );
       // 按"业务分组"比较归属是否变化：组内 scan/manual 成员切换不算用户改归属
       if (selectedGroupKey.value !== initialGroupKey.value) {
@@ -118,6 +137,34 @@ async function submit() {
         @keyup.enter="submit"
       />
       <p class="tm-hint">脚本不在工具根目录时，填写其所在子目录（相对工具目录）；启动终端将直接进入该目录</p>
+
+      <label class="tm-field-label">启动模式</label>
+      <select v-model="launchMode" class="tm-text-input">
+        <option value="terminal">开终端（命令行工具默认）</option>
+        <option value="spawn">直接启动不开终端（GUI 工具如冰蝎/jar）</option>
+      </select>
+      <p class="tm-hint">jar/Java GUI 工具选「直接启动」；命令行工具选「开终端」</p>
+
+      <label class="tm-field-label">启动命令（可选）</label>
+      <input
+        v-model="launchCommand"
+        class="tm-text-input"
+        type="text"
+        placeholder='如 java -jar Behinder.jar 或 D:\path\java.exe -jar xxx.jar'
+        spellcheck="false"
+        @keyup.enter="submit"
+      />
+      <p class="tm-hint">覆盖默认入口；spawn 模式必填。可用绝对路径调外部 JRE，不依赖系统 PATH</p>
+
+      <label class="tm-field-label">环境变量（可选）</label>
+      <textarea
+        v-model="envText"
+        class="tm-text-input"
+        rows="3"
+        placeholder="每行一个 KEY=VALUE，如&#10;PATH=D:\Program\Heavenly Fox\Java_path\Java_11_win\bin;%PATH%"
+        spellcheck="false"
+      />
+      <p class="tm-hint">注入到启动进程的环境变量；用绝对路径调 java 时通常不需要</p>
     </template>
 
     <p v-if="error" class="tm-error">{{ error }}</p>

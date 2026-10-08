@@ -1,4 +1,5 @@
 use crate::constants::{TOOL_CMD, TOOL_EXE};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::AppHandle;
@@ -26,9 +27,28 @@ pub fn launch_tool(
     args: Option<String>,
     admin: Option<bool>,
     exec_dir: Option<String>,
+    launch_mode: Option<String>,
+    launch_command: Option<String>,
+    env: Option<HashMap<String, String>>,
 ) -> Result<(), String> {
     match tool_type.as_str() {
-        TOOL_CMD => open_cmd_window(&resolve_exec_dir(&path, exec_dir.as_deref())),
+        TOOL_CMD => {
+            // spawn 模式：直接启动不开终端（GUI 工具如冰蝎/jar），需配 launch_command
+            if launch_mode.as_deref() == Some("spawn") {
+                return launch_cmd_spawn(
+                    &path,
+                    launch_command.as_deref(),
+                    exec_dir.as_deref(),
+                    env.as_ref(),
+                );
+            }
+            // terminal 模式（默认）：开终端；有 launch_command 时在终端里执行它
+            open_cmd_window(
+                &resolve_exec_dir(&path, exec_dir.as_deref()),
+                launch_command.as_deref(),
+                env.as_ref(),
+            )
+        }
         TOOL_EXE => launch_exe(&path, args.as_deref(), admin.unwrap_or(false)),
         other => Err(format!("未知工具类型: {}", other)),
     }
@@ -87,7 +107,11 @@ pub fn open_path(app: AppHandle, path: String) -> Result<(), String> {
 // ---------- Windows ----------
 
 #[cfg(windows)]
-fn open_cmd_window(path: &str) -> Result<(), String> {
+fn open_cmd_window(
+    path: &str,
+    launch_command: Option<&str>,
+    env: Option<&HashMap<String, String>>,
+) -> Result<(), String> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
@@ -96,13 +120,59 @@ fn open_cmd_window(path: &str) -> Result<(), String> {
     }
 
     // 经 `start` 启动：外层辅助进程不可见，内层 cmd 获得独立控制台，
-    // 不继承父进程 stdin（否则管道 EOF 会导致窗口一闪而过）
-    Command::new("cmd.exe")
-        .args(["/C", "start", "", "/D", path, "cmd.exe", "/K"])
-        .creation_flags(CREATE_NO_WINDOW)
+    // 不继承父进程 stdin（否则管道 EOF 会导致窗口一闪而过）。
+    // 有 launch_command 时，在终端里执行它（如 `python xxx.py`，需看输出）；否则开交互式 shell
+    let mut c = Command::new("cmd.exe");
+    c.args(["/C", "start", "", "/D", path, "cmd.exe", "/K"]);
+    if let Some(lc) = launch_command {
+        // 原样透传 launch_command（其中可能自带引号，如 -c "code"），不能交给 Rust 自动转义
+        c.raw_arg(lc);
+    }
+    if let Some(e) = env {
+        for (k, v) in e {
+            c.env(k, v);
+        }
+    }
+    c.creation_flags(CREATE_NO_WINDOW)
         .spawn()
         .map(|_| ())
         .map_err(|e| format!("打开命令窗口失败: {}", e))
+}
+
+/// spawn 模式启动 CMD 工具（不开终端，适合 GUI 工具如冰蝎/jar）：
+/// shlex 解析 launch_command，spawn，注入 env，working_dir 用 resolve_exec_dir
+#[cfg(windows)]
+fn launch_cmd_spawn(
+    tool_path: &str,
+    launch_command: Option<&str>,
+    exec_dir: Option<&str>,
+    env: Option<&HashMap<String, String>>,
+) -> Result<(), String> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+    let work_dir = resolve_exec_dir(tool_path, exec_dir);
+    if !Path::new(&work_dir).is_dir() {
+        return Err(format!("目录不存在: {}", work_dir));
+    }
+
+    let lc = launch_command.ok_or("spawn 模式需要配置启动命令")?;
+    let parts = shlex::split(lc).ok_or("启动命令解析失败（引号不配对？）")?;
+    if parts.is_empty() {
+        return Err("启动命令为空".into());
+    }
+
+    let mut c = Command::new(&parts[0]);
+    c.args(&parts[1..]).current_dir(&work_dir);
+    if let Some(e) = env {
+        for (k, v) in e {
+            c.env(k, v);
+        }
+    }
+    c.creation_flags(CREATE_NO_WINDOW)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("启动失败: {}", e))
 }
 
 #[cfg(windows)]
@@ -266,7 +336,11 @@ fn launch_elevated(
 // ---------- 非 Windows 兜底 ----------
 
 #[cfg(not(windows))]
-fn open_cmd_window(path: &str) -> Result<(), String> {
+fn open_cmd_window(
+    path: &str,
+    _launch_command: Option<&str>,
+    _env: Option<&HashMap<String, String>>,
+) -> Result<(), String> {
     if !Path::new(path).is_dir() {
         return Err(format!("目录不存在: {}", path));
     }

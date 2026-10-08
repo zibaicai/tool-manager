@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Tool } from '../types';
-import { assignCmdTool, scanAllCmdTools, updateCmdTool } from '../api/fs';
+import { assignCmdTool, removeCmdTool, scanAllCmdTools, updateCmdTool } from '../api/fs';
 
 /** CMD 自动扫描工具领域：扫描结果列表与覆盖项（标题/手动分配）写入 */
 export const useCmdToolsStore = defineStore('cmdTools', () => {
@@ -24,10 +24,13 @@ export const useCmdToolsStore = defineStore('cmdTools', () => {
     desc: string,
     weight = 0,
     execDir = '',
+    launchMode = '',
+    launchCommand = '',
+    env: Record<string, string> | null = null,
   ): Promise<void> {
     const current = tools.value.find((t) => t.id === id);
     if (!current) return;
-    const tool = await updateCmdTool(current, title, desc, weight, execDir);
+    const tool = await updateCmdTool(current, title, desc, weight, execDir, launchMode, launchCommand, env);
     const idx = tools.value.findIndex((t) => t.id === id);
     if (idx >= 0) tools.value[idx] = tool;
   }
@@ -40,5 +43,13 @@ export const useCmdToolsStore = defineStore('cmdTools', () => {
     await assignCmdTool(current, categoryId);
   }
 
-  return { tools, reload, updateCmd, assignCmd };
+  /** 移除手动注册的外部 CMD 工具（只删记录，不动磁盘目录） */
+  async function removeCmd(id: string): Promise<void> {
+    const current = tools.value.find((t) => t.id === id);
+    if (!current) return;
+    await removeCmdTool(current);
+    tools.value = tools.value.filter((t) => t.id !== id);
+  }
+
+  return { tools, reload, updateCmd, assignCmd, removeCmd };
 });

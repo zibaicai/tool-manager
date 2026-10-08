@@ -1,4 +1,4 @@
-﻿use crate::commands::config::ensure_config_dir;
+use crate::commands::config::ensure_config_dir;
 use crate::constants::{
     strip_bom, CAT_SCAN, CMD_TOOLS_FILE, ICON_FILE, OPS_FILE, README_FILE, TOOL_CMD,
 };
@@ -36,6 +36,15 @@ pub struct CmdToolOverride {
     /// 脚本执行目录：工具目录下的相对子路径（或绝对路径），打开终端时作为工作目录
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exec_dir: Option<String>,
+    /// 启动模式："terminal"=开终端执行（默认）；"spawn"=直接启动不开终端（GUI 工具如冰蝎/jar）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch_mode: Option<String>,
+    /// 启动命令：覆盖默认 entry（如 `java -jar Behinder.jar` 或绝对路径 java.exe -jar xxx.jar）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch_command: Option<String>,
+    /// 环境变量注入（如 PATH 指向自带 JRE）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub env: Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -81,6 +90,15 @@ fn apply_override(tool: &mut Tool, overrides: &CmdToolOverrides) {
         }
         if let Some(ed) = &ov.exec_dir {
             tool.exec_dir = Some(ed.clone());
+        }
+        if let Some(lm) = &ov.launch_mode {
+            tool.launch_mode = Some(lm.clone());
+        }
+        if let Some(lc) = &ov.launch_command {
+            tool.launch_command = Some(lc.clone());
+        }
+        if let Some(e) = &ov.env {
+            tool.env = Some(e.clone());
         }
     }
 }
@@ -173,6 +191,11 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
     };
 
     let path_str = dir.to_string_lossy().to_string();
+    // 基线：不在任何扫描根下视为外部工具。手动录入/分配路径的工具由调用方
+    // 按 is_scan_product 复核（位于顶层 scanRoot 下或已列入 dirs 名单的不可移除）
+    let external = !roots
+        .iter()
+        .any(|r| is_under_root(&path_str, &r.to_string_lossy()));
     Some(Tool {
         id: make_id(&stable_key(dir, roots)),
         tool_type: TOOL_CMD.into(),
@@ -189,6 +212,10 @@ fn inspect_dir(dir: &Path, category_id: &str, roots: &[PathBuf]) -> Option<Tool>
         stop_admin: false,
         weight: 0,
         exec_dir: None,
+        launch_mode: None,
+        launch_command: None,
+        env: None,
+        external,
     })
 }
 
@@ -448,7 +475,7 @@ fn scan_category(
     });
 
     // 手动分配到本分类但未被 dirs 名单覆盖的工具，按记录的目录路径补入
-    for tool in collect_assigned(overrides, roots, cat) {
+    for tool in collect_assigned(menu, overrides, roots, cat) {
         if !tools.iter().any(|t| t.id == tool.id) {
             tools.push(tool);
         }
@@ -491,8 +518,10 @@ fn scan_category(
 
 /// 收集通过覆盖记录手动分配到指定分类的 CMD 工具（按记录的目录路径补入）。
 /// scan 与 manual 两类分类通用：manual 分类不扫描目录，这是其获得 CMD 工具的唯一途径。
+/// 这类工具的存在依赖手动记录：非扫描产物者标记 external（卡片提供移除入口）。
 /// 注意：返回的工具尚未应用覆盖（标题/副标题），由调用方统一 apply_override
 fn collect_assigned(
+    menu: &MenuConfig,
     overrides: &CmdToolOverrides,
     roots: &[PathBuf],
     cat: &Category,
@@ -501,8 +530,9 @@ fn collect_assigned(
     for (id, ov) in &overrides.tools {
         if ov.category_id.as_deref() == Some(cat.id.as_str()) {
             if let Some(dp) = &ov.dir_path {
-                if let Some(tool) = inspect_dir(Path::new(dp), &cat.id, roots) {
+                if let Some(mut tool) = inspect_dir(Path::new(dp), &cat.id, roots) {
                     if !tools.iter().any(|t| &t.id == id) {
+                        tool.external = !is_scan_product(menu, &tool.path);
                         tools.push(tool);
                     }
                 }
@@ -526,7 +556,7 @@ fn scan_all(menu: &MenuConfig, overrides: &CmdToolOverrides) -> Vec<Tool> {
     for cat in &menu.categories {
         if cat.category_type != CAT_SCAN {
             // 手动型分类不扫描目录，仅收集手动分配过来的 CMD 工具
-            let mut assigned = collect_assigned(overrides, &roots, cat);
+            let mut assigned = collect_assigned(menu, overrides, &roots, cat);
             for t in &mut assigned {
                 apply_override(t, overrides);
             }
@@ -563,6 +593,32 @@ fn is_under_root(path: &str, root: &str) -> bool {
     p.len() > r.len()
         && p.starts_with(&r)
         && (p.as_bytes()[r.len()] == b'\\' || p.as_bytes()[r.len()] == b'/')
+}
+
+/// 扫描产物判定：位于顶层 scanRoot 之下（删掉覆盖记录后会被孤儿兜底重新扫出），
+/// 或列在某 scan 分类的 dirs 名单中（删掉记录后仍会被该分类按名单扫出）。
+/// 非扫描产物的工具仅靠手动录入/分配记录存在，移除记录即从列表消失 —— 这类才允许移除
+fn is_scan_product(menu: &MenuConfig, path: &str) -> bool {
+    if let Some(sr) = &menu.scan_root {
+        if is_under_root(path, sr) {
+            return true;
+        }
+    }
+    let norm = |p: &Path| {
+        p.to_string_lossy()
+            .trim_end_matches(['\\', '/'])
+            .to_lowercase()
+    };
+    let target = norm(Path::new(path));
+    menu.categories
+        .iter()
+        .filter(|c| c.category_type == CAT_SCAN)
+        .filter_map(|c| effective_root(c, menu).map(|r| (c, r)))
+        .any(|(c, root)| {
+            c.dirs
+                .iter()
+                .any(|d| norm(&Path::new(&root).join(d.trim())) == target)
+        })
 }
 
 /// 手动分配 CMD 工具到指定目录（分类）。category_id 传 None 表示清除分配、恢复自动归属。
@@ -622,6 +678,7 @@ pub fn assign_cmd_tool(
     let view_cat = category_id.clone().unwrap_or_default();
     let mut tool = inspect_dir(Path::new(&path), &view_cat, &roots)
         .ok_or(format!("目录不存在: {}", path))?;
+    tool.external = !is_scan_product(&menu, &path);
     apply_override(&mut tool, &overrides);
     Ok(tool)
 }
@@ -641,7 +698,7 @@ pub fn register_cmd_tool(
     if !dir.is_dir() {
         return Err(format!("目录不存在: {}", path));
     }
-    const CMD_ENTRY_EXTS: &[&str] = &["exe", "bat", "cmd", "ps1", "py", "sh"];
+    const CMD_ENTRY_EXTS: &[&str] = &["exe", "bat", "cmd", "ps1", "py", "sh", "jar"];
     let has_entry = fs::read_dir(dir)
         .map(|it| {
             it.flatten().any(|e| {
@@ -667,6 +724,7 @@ pub fn register_cmd_tool(
 
     let mut tool = inspect_dir(dir, &cat.id, &roots)
         .ok_or(format!("无法解析目录: {}", path))?;
+    tool.external = !is_scan_product(&menu, &path);
 
     let mut overrides = load_overrides_migrated(&app, Some(&menu));
     let mut ov = overrides.tools.get(&tool.id).cloned().unwrap_or_default();
@@ -682,8 +740,23 @@ pub fn register_cmd_tool(
     Ok(tool)
 }
 
-/// 更新 CMD 工具的标题/副标题/权重/脚本执行目录（标题传空表示清除，标题恢复自动派生；
-/// exec_dir 传空表示清除、恢复工具目录本身）。需要传入工具的 path/categoryId 以便重新派生并返回最新 Tool。
+/// 移除手动录入/分配的 CMD 工具：删除其覆盖记录（不删除磁盘上的目录）。
+/// 扫描产物（位于顶层 scanRoot 下，或列在某 scan 分类的 dirs 名单中）删掉记录
+/// 也会被重新扫出，拒绝移除
+#[tauri::command]
+pub fn remove_cmd_tool(app: AppHandle, id: String, path: String) -> Result<(), String> {
+    let menu = crate::commands::config::load_menu_config(app.clone())?;
+    if is_scan_product(&menu, &path) {
+        return Err("该工具是扫描产物（位于扫描根下或已列入目录扫描名单），无法移除".into());
+    }
+    let mut overrides = load_overrides_migrated(&app, Some(&menu));
+    overrides.tools.remove(&id);
+    save_overrides(&app, &overrides)
+}
+
+/// 更新 CMD 工具的标题/副标题/权重/脚本执行目录/启动模式/启动命令/环境变量
+/// （标题传空表示清除，标题恢复自动派生；exec_dir 传空表示清除、恢复工具目录本身）。
+/// 需要传入工具的 path/categoryId 以便重新派生并返回最新 Tool。
 #[tauri::command]
 pub fn update_cmd_tool(
     app: AppHandle,
@@ -694,6 +767,9 @@ pub fn update_cmd_tool(
     desc: Option<String>,
     weight: Option<i32>,
     exec_dir: Option<String>,
+    launch_mode: Option<String>,
+    launch_command: Option<String>,
+    env: Option<std::collections::HashMap<String, String>>,
 ) -> Result<Tool, String> {
     let title = title.filter(|t| !t.trim().is_empty()).map(|t| t.trim().to_string());
     let desc = desc.filter(|d| !d.trim().is_empty()).map(|d| d.trim().to_string());
@@ -713,6 +789,13 @@ pub fn update_cmd_tool(
             return Err(format!("脚本执行目录不存在: {}", resolved.display()));
         }
     }
+    let launch_mode = launch_mode
+        .map(|s| s.trim().to_string())
+        .filter(|s| s == "terminal" || s == "spawn");
+    let launch_command = launch_command
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let env = env.filter(|m| !m.is_empty());
 
     let menu_opt = crate::commands::config::load_menu_config(app.clone()).ok();
     let roots = menu_opt.as_ref().map(collect_roots).unwrap_or_default();
@@ -722,14 +805,20 @@ pub fn update_cmd_tool(
     ov.desc = desc;
     ov.weight = weight;
     ov.exec_dir = exec_dir;
+    ov.launch_mode = launch_mode;
+    ov.launch_command = launch_command;
+    ov.env = env;
     // 补记工具目录绝对路径，使仅改过标题的记录在将来 scanRoot 搬迁时也能按目录名迁移
     ov.dir_path.get_or_insert_with(|| path.clone());
-    // 保留已有的手动分配（category_id）；标题/副标题/分配/权重/执行目录全空时整条删除（dir_path 不单独构成记录）
+    // 保留已有的手动分配（category_id）；全空时整条删除（dir_path 不单独构成记录）
     if ov.title.is_none()
         && ov.desc.is_none()
         && ov.category_id.is_none()
         && ov.weight.is_none()
         && ov.exec_dir.is_none()
+        && ov.launch_mode.is_none()
+        && ov.launch_command.is_none()
+        && ov.env.is_none()
     {
         overrides.tools.remove(&id);
     } else {
@@ -739,6 +828,9 @@ pub fn update_cmd_tool(
 
     let mut tool = inspect_dir(Path::new(&path), &category_id, &roots)
         .ok_or(format!("目录不存在: {}", path))?;
+    if let Some(m) = &menu_opt {
+        tool.external = !is_scan_product(m, &path);
+    }
     apply_override(&mut tool, &overrides);
     Ok(tool)
 }
@@ -953,6 +1045,9 @@ mod tests {
                 dir_path: Some(nuclei_abs.clone()),
                 weight: None,
                 exec_dir: None,
+            launch_mode: None,
+            launch_command: None,
+            env: None,
             },
         );
         ov.tools.insert(
@@ -964,6 +1059,9 @@ mod tests {
                 dir_path: Some(js_abs.clone()),
                 weight: None,
                 exec_dir: None,
+            launch_mode: None,
+            launch_command: None,
+            env: None,
             },
         );
 
@@ -1019,6 +1117,9 @@ mod tests {
                 dir_path: Some(old_nuclei.clone()),
                 weight: None,
                 exec_dir: None,
+            launch_mode: None,
+            launch_command: None,
+            env: None,
             },
         );
         let orphan_old_id = make_id(&old_root.join("URLFinder").to_string_lossy());
@@ -1066,7 +1167,8 @@ mod tests {
         assert!(ov.tools.contains_key("abc"));
     }
 
-    /// 稳定 key 与盘符/父目录无关，恒为相对路径（一级即目录名）
+    /// 稳定 key：扫描根下的目录恒为相对路径（一级即目录名），与盘符/父目录无关；
+    /// 匹配不到任何扫描根的外部目录（如天狐工具箱）走绝对路径归一化（小写 + 去尾斜杠）
     #[test]
     fn stable_key_is_location_independent() {
         let roots = vec![PathBuf::from("D:\\ScriptingTool\\cmd_tool")];
@@ -1079,9 +1181,10 @@ mod tests {
             stable_key(&PathBuf::from("E:\\other\\toolbox\\nuclei"), &roots2),
             "nuclei"
         );
+        // 外部目录：不在任何扫描根下，走绝对路径归一化（与 register_cmd_tool 的 id 策略一致）
         assert_eq!(
             stable_key(&PathBuf::from("E:\\other\\toolbox\\nuclei"), &[]),
-            "nuclei"
+            "e:\\other\\toolbox\\nuclei"
         );
     }
 
@@ -1194,5 +1297,138 @@ mod tests {
         assert_eq!(ov.tools.len(), 2);
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    /// 手动录入/分配的工具：不在顶层 scanRoot 下且未列入任何 dirs 名单 → external（可移除）；
+    /// 位于 scanRoot 下（孤儿兜底会扫回）或已列入 dirs 名单的仍是扫描产物（不可移除）
+    #[test]
+    fn assigned_tool_external_flag_follows_scan_product_rule() {
+        let top = temp_dir("toproot");
+        let own = temp_dir("ownroot2");
+        fs::create_dir_all(top.join("nuclei")).unwrap();
+        fs::create_dir_all(own.join("heapdump")).unwrap();
+        fs::create_dir_all(own.join("listed")).unwrap();
+
+        let nuclei_abs = top.join("nuclei").to_string_lossy().to_string();
+        let heapdump_abs = own.join("heapdump").to_string_lossy().to_string();
+        let listed_abs = own.join("listed").to_string_lossy().to_string();
+        let menu = MenuConfig {
+            categories: vec![
+                make_cat("c1", &[], None),
+                make_cat("c2", &["listed"], Some(own.to_str().unwrap())),
+            ],
+            scan_root: Some(top.to_string_lossy().to_string()),
+        };
+        let roots = collect_roots(&menu);
+        let mut ov = CmdToolOverrides::default();
+        ov.version = OVERRIDES_VERSION;
+        // heapdump：分类自带根下、未列入 dirs，仅靠分配记录出现
+        ov.tools.insert(
+            make_id(&stable_key(&own.join("heapdump"), &roots)),
+            CmdToolOverride {
+                category_id: Some("c2".into()),
+                dir_path: Some(heapdump_abs.clone()),
+                ..Default::default()
+            },
+        );
+        // nuclei：顶层 scanRoot 下，被分配到 c2
+        ov.tools.insert(
+            make_id(&stable_key(&top.join("nuclei"), &roots)),
+            CmdToolOverride {
+                category_id: Some("c2".into()),
+                dir_path: Some(nuclei_abs.clone()),
+                ..Default::default()
+            },
+        );
+
+        let tools = scan_all(&menu, &ov);
+        let heapdump = tools
+            .iter()
+            .find(|t| t.path == heapdump_abs)
+            .expect("heapdump 应被补入 c2");
+        assert!(heapdump.external, "仅靠手动记录存在的外部工具应可移除");
+        let nuclei = tools
+            .iter()
+            .find(|t| t.path == nuclei_abs)
+            .expect("nuclei 应被补入 c2");
+        assert!(!nuclei.external, "位于顶层 scanRoot 下，删记录会被孤儿兜底扫回");
+        let listed = tools
+            .iter()
+            .find(|t| t.path == listed_abs)
+            .expect("listed 应被 dirs 名单扫出");
+        assert!(!listed.external, "已列入 dirs 名单的扫描产物不可移除");
+
+        // is_scan_product 直测
+        assert!(is_scan_product(&menu, &nuclei_abs));
+        assert!(is_scan_product(&menu, &listed_abs));
+        assert!(!is_scan_product(&menu, &heapdump_abs));
+
+        let _ = fs::remove_dir_all(&top);
+        let _ = fs::remove_dir_all(&own);
+    }
+
+    /// apply_override 把 launch_mode/launch_command/env 应用到 Tool
+    #[test]
+    fn apply_override_applies_launch_fields() {
+        let mut overrides = CmdToolOverrides::default();
+        let mut env = std::collections::HashMap::new();
+        env.insert("PATH".into(), "D:\\jre\\bin".into());
+        overrides.tools.insert(
+            "id1".into(),
+            CmdToolOverride {
+                launch_mode: Some("spawn".into()),
+                launch_command: Some("java -jar app.jar".into()),
+                env: Some(env),
+                ..Default::default()
+            },
+        );
+        let mut tool = Tool {
+            id: "id1".into(),
+            tool_type: TOOL_CMD.into(),
+            title: "t".into(),
+            path: "/x".into(),
+            doc_path: None,
+            icon: None,
+            category_id: "c1".into(),
+            available: true,
+            args: None,
+            desc: None,
+            admin: false,
+            stop_path: None,
+            stop_admin: false,
+            weight: 0,
+            exec_dir: None,
+            launch_mode: None,
+            launch_command: None,
+            env: None,
+            external: false,
+        };
+        apply_override(&mut tool, &overrides);
+        assert_eq!(tool.launch_mode.as_deref(), Some("spawn"));
+        assert_eq!(tool.launch_command.as_deref(), Some("java -jar app.jar"));
+        assert_eq!(
+            tool.env.as_ref().unwrap().get("PATH"),
+            Some(&"D:\\jre\\bin".to_string())
+        );
+    }
+
+    /// 新字段在 None 时不参与序列化；旧 cmd-tools.json（无新字段）反序列化兼容
+    #[test]
+    fn cmd_tool_override_optional_fields_serialize_compat() {
+        let ov = CmdToolOverride {
+            title: Some("t".into()),
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&ov).unwrap();
+        assert!(!json.contains("launchMode"), "launchMode 应不序列化");
+        assert!(!json.contains("launchCommand"));
+        assert!(!json.contains("env"));
+        // 旧 JSON（无新字段）反序列化得到默认 None
+        let legacy = r#"{"title":"旧工具"}"#;
+        let parsed: CmdToolOverride = serde_json::from_str(legacy).unwrap();
+        assert_eq!(parsed.title.as_deref(), Some("旧工具"));
+        assert!(parsed.launch_mode.is_none());
+        assert!(parsed.launch_command.is_none());
+        assert!(parsed.env.is_none());
     }
 }

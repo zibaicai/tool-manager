@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { Tool } from '../../types';
 import { launchTool, openPath, stopTool } from '../../api/launcher';
 import { useExeToolsStore } from '../../stores/exeTools';
+import { useCmdToolsStore } from '../../stores/cmdTools';
 import { alert, confirm } from '../../composables/useFeedback';
 import { TOOL_TYPES } from '../../constants';
 import DocDialog from './DocDialog.vue';
@@ -10,9 +11,15 @@ import ExeToolEditDialog from './ExeToolEditDialog.vue';
 
 const props = defineProps<{ tool: Tool }>();
 const exeStore = useExeToolsStore();
+const cmdStore = useCmdToolsStore();
 
 const showDoc = ref(false);
 const showEdit = ref(false);
+
+/** 可移除：EXE 工具，或手动录入/分配的非扫描产物 CMD 工具（扫描产物删掉也会再扫出来，不提供入口） */
+const removable = computed(
+  () => props.tool.type === TOOL_TYPES.EXE || (props.tool.type === TOOL_TYPES.CMD && props.tool.external),
+);
 
 function openDoc() {
   if (!props.tool.docPath) return;
@@ -20,15 +27,20 @@ function openDoc() {
 }
 
 async function remove() {
+  const isExe = props.tool.type === TOOL_TYPES.EXE;
   const ok = await confirm({
     title: '移除工具',
-    message: `确定从列表移除「${props.tool.title}」吗？（不会删除 exe 文件本身）`,
+    message: `确定从列表移除「${props.tool.title}」吗？（只删程序内记录，不动磁盘上的${isExe ? '文件' : '目录'}）`,
     confirmText: '移除',
     danger: true,
   });
   if (!ok) return;
   try {
-    await exeStore.removeExe(props.tool.id);
+    if (isExe) {
+      await exeStore.removeExe(props.tool.id);
+    } else {
+      await cmdStore.removeCmd(props.tool.id);
+    }
   } catch (e) {
     await alert('移除失败: ' + e);
   }
@@ -65,7 +77,7 @@ async function openDir() {
       <div class="title" :title="tool.title">{{ tool.title }}</div>
       <div class="header-right">
         <button class="edit-btn" title="编辑标题/副标题" @click="showEdit = true">✎</button>
-        <button v-if="tool.type === TOOL_TYPES.EXE" class="remove-btn" title="从列表移除" @click="remove">✕</button>
+        <button v-if="removable" class="remove-btn" title="从列表移除" @click="remove">✕</button>
         <div class="type-tag" :class="tool.type">{{ tool.type.toUpperCase() }}</div>
       </div>
     </div>

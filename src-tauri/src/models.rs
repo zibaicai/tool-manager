@@ -36,6 +36,20 @@ pub struct Tool {
     /// None/空表示使用工具目录本身。EXE 类恒为 None
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exec_dir: Option<String>,
+    /// 启动模式："terminal"=开终端执行（CMD 类默认）；"spawn"=直接启动不开终端（GUI 工具如冰蝎/jar）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch_mode: Option<String>,
+    /// 启动命令：覆盖默认 entry（如 `java -jar Behinder.jar` 或 `D:\path\java.exe -jar xxx.jar`）；
+    /// None 表示用工具目录作为默认 entry。spawn 模式下必填
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch_command: Option<String>,
+    /// 环境变量注入（如 PATH 指向自带 JRE）；None 表示不注入
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub env: Option<std::collections::HashMap<String, String>>,
+    /// 手动录入/分配且非扫描产物的 CMD 工具：卡片显示移除按钮；
+    /// 扫描产物（位于顶层 scanRoot 下，或已列入某 scan 分类的 dirs 名单）与 EXE 类恒为 false
+    #[serde(default)]
+    pub external: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ts_rs::TS)]

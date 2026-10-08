@@ -14,6 +14,9 @@ export function launchTool(tool: Tool): Promise<void> {
     args: tool.args ?? null,
     admin: tool.admin ?? false,
     execDir: tool.execDir ?? null,
+    launchMode: tool.launchMode ?? null,
+    launchCommand: tool.launchCommand ?? null,
+    env: tool.env ?? null,
   });
 }
 

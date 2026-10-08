@@ -86,4 +86,22 @@ weight: number,
  * CMD 类的脚本执行目录：工具目录下的相对子路径（如 bin），启动终端时作为工作目录；
  * None/空表示使用工具目录本身。EXE 类恒为 None
  */
-execDir: string | null, };
+execDir: string | null, 
+/**
+ * 启动模式："terminal"=开终端执行（CMD 类默认）；"spawn"=直接启动不开终端（GUI 工具如冰蝎/jar）
+ */
+launchMode: string | null, 
+/**
+ * 启动命令：覆盖默认 entry（如 `java -jar Behinder.jar` 或 `D:\path\java.exe -jar xxx.jar`）；
+ * None 表示用工具目录作为默认 entry。spawn 模式下必填
+ */
+launchCommand: string | null, 
+/**
+ * 环境变量注入（如 PATH 指向自带 JRE）；None 表示不注入
+ */
+env: { [key in string]?: string } | null, 
+/**
+ * 手动录入/分配且非扫描产物的 CMD 工具：卡片显示移除按钮；
+ * 扫描产物（位于顶层 scanRoot 下，或已列入某 scan 分类的 dirs 名单）与 EXE 类恒为 false
+ */
+external: boolean, };

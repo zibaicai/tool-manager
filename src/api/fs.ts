@@ -11,13 +11,17 @@ export function readTextFile(path: string): Promise<string> {
   return invoke('read_text_file', { path });
 }
 
-/** 更新 CMD 工具的标题/副标题/权重/脚本执行目录（传空串表示清除，标题恢复自动派生；weight 传 0 表示默认） */
+/** 更新 CMD 工具的标题/副标题/权重/脚本执行目录/启动模式/启动命令/环境变量
+ * （传空串表示清除，标题恢复自动派生；weight 传 0 表示默认） */
 export function updateCmdTool(
   tool: Tool,
   title: string,
   desc: string,
   weight = 0,
   execDir = '',
+  launchMode = '',
+  launchCommand = '',
+  env: Record<string, string> | null = null,
 ): Promise<Tool> {
   return invoke('update_cmd_tool', {
     id: tool.id,
@@ -27,6 +31,9 @@ export function updateCmdTool(
     desc: desc.trim() || null,
     weight: weight || null,
     execDir: execDir.trim() || null,
+    launchMode: launchMode.trim() || null,
+    launchCommand: launchCommand.trim() || null,
+    env: env && Object.keys(env).length > 0 ? env : null,
   });
 }
 
@@ -47,6 +54,11 @@ export function registerCmdTool(
     categoryId,
     weight: weight || null,
   });
+}
+
+/** 移除手动注册的外部 CMD 工具（只删记录，不动磁盘目录）；扫描产物会被后端拒绝 */
+export function removeCmdTool(tool: Tool): Promise<void> {
+  return invoke('remove_cmd_tool', { id: tool.id, path: tool.path });
 }
 
 /** 弹出系统目录选择框，返回所选目录的绝对路径（取消时返回 null） */
